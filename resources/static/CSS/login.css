@@ -1,0 +1,600 @@
+/* ============================================================
+   CyberShield CSMS — login.css
+   Login Page Styles (supplements main.css)
+   ============================================================ */
+
+
+/* ── Full-page centering ────────────────────────────────────── */
+html,
+body {
+  height:          100%;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  background:      #0A0E1A;
+  /* Subtle grid texture for depth */
+  background-image:
+    linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+
+/* ── Wrapper ────────────────────────────────────────────────── */
+.login-wrapper {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  width:           100%;
+  min-height:      100%;
+  padding:         24px 16px;
+}
+
+
+/* ── Card ───────────────────────────────────────────────────── */
+.login-card {
+  width:         100%;
+  max-width:     420px;
+  background:    #0D1117;
+  border-radius: 12px;
+  padding:       40px;
+  border:        1px solid #1E2733;
+  box-shadow:
+    0 0 60px rgba(0, 212, 255, 0.12),
+    0 24px 64px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  position: relative;
+  overflow:  hidden;
+  animation: cardFadeIn 0.45s ease both;
+}
+
+/* Faint cyan top-edge glow line */
+.login-card::before {
+  content:    '';
+  position:   absolute;
+  top:        0;
+  left:       10%;
+  right:      10%;
+  height:     1px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(0, 212, 255, 0.60),
+    transparent);
+  border-radius: 50%;
+}
+
+
+/* ── Shield Container ───────────────────────────────────────── */
+.shield-container {
+  text-align:    center;
+  margin-bottom: 24px;
+}
+
+.shield-icon {
+  width:     72px;
+  height:    72px;
+  margin:    0 auto;
+  display:   block;
+  color:     #00D4FF;
+  animation: shield-pulse 2s ease-in-out infinite;
+  /* Works for both <img> and inline <svg> */
+  filter:    drop-shadow(0 0 10px rgba(0, 212, 255, 0.50));
+}
+
+/* If using an <img> or <svg> tag with class shield-icon */
+.shield-icon svg,
+.shield-icon img {
+  width:  100%;
+  height: 100%;
+}
+
+
+/* ── Title & Subtitle ───────────────────────────────────────── */
+.login-title {
+  font-size:   28px;
+  font-weight: 700;
+  color:       #00D4FF;
+  text-align:  center;
+  margin:      8px 0;
+  letter-spacing: 0.02em;
+  text-shadow: 0 0 20px rgba(0, 212, 255, 0.35);
+}
+
+.login-subtitle {
+  color:         #8B949E;
+  font-size:     13px;
+  text-align:    center;
+  margin-bottom: 28px;
+  line-height:   1.5;
+}
+
+
+/* ── Divider ────────────────────────────────────────────────── */
+.login-divider {
+  border:     none;
+  border-top: 1px solid #21272F;
+  margin:     0 0 24px;
+}
+
+
+/* ── Input Group ────────────────────────────────────────────── */
+.input-group {
+  position:      relative;
+  margin-bottom: 16px;
+}
+
+.input-label {
+  display:        block;
+  font-size:      11px;
+  font-weight:    600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color:          #8B949E;
+  margin-bottom:  6px;
+}
+
+/* Icon positioned inside the field */
+.input-icon {
+  position:   absolute;
+  left:       14px;
+  top:        50%;
+  transform:  translateY(-50%);
+  color:      #8B949E;
+  width:      16px;
+  height:     16px;
+  pointer-events: none;
+  transition: color 0.2s ease;
+  display:    flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Shift icon down when a visible label sits above the field */
+.input-group.has-label .input-icon {
+  top: calc(50% + 10px);
+}
+
+/* Field */
+.input-field {
+  width:         100%;
+  padding:       12px 12px 12px 42px;
+  background:    #0A0E1A;
+  color:         #E6EDF3;
+  border:        1px solid #30363D;
+  border-radius: 8px;
+  font-size:     14px;
+  font-family:   inherit;
+  line-height:   1.5;
+  outline:       none;
+  transition:
+    border-color 0.2s ease,
+    box-shadow   0.2s ease;
+  /* Leave room for eye-toggle on password fields */
+}
+
+.input-field::placeholder {
+  color: #4A5568;
+}
+
+.input-field:hover:not(:focus) {
+  border-color: #3D4756;
+}
+
+.input-field:focus {
+  border-color: #00D4FF;
+  box-shadow:   0 0 0 3px rgba(0, 212, 255, 0.20);
+  outline:      none;
+}
+
+/* When focused, also light up the adjacent icon */
+.input-group:focus-within .input-icon {
+  color: #00D4FF;
+}
+
+/* Password field — extra right padding for the eye toggle */
+.input-field[type="password"],
+.input-field.has-toggle {
+  padding-right: 42px;
+}
+
+/* Error state */
+.input-group.has-error .input-field {
+  border-color: #FF4444;
+  box-shadow:   0 0 0 3px rgba(255, 68, 68, 0.15);
+}
+
+.input-group.has-error .input-icon {
+  color: #FF4444;
+}
+
+.input-group-error {
+  font-size:  12px;
+  color:      #FF6B6B;
+  margin-top: 5px;
+  display:    none;
+}
+
+.input-group.has-error .input-group-error {
+  display: block;
+}
+
+
+/* ── Eye Toggle (show/hide password) ────────────────────────── */
+.eye-toggle {
+  position:    absolute;
+  right:       12px;
+  top:         50%;
+  transform:   translateY(-50%);
+  background:  transparent;
+  border:      none;
+  cursor:      pointer;
+  color:       #8B949E;
+  padding:     4px;
+  display:     flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition:  color 0.2s ease, background 0.2s ease;
+  line-height: 1;
+}
+
+/* Shift toggle down when a visible label is above */
+.input-group.has-label .eye-toggle {
+  top: calc(50% + 10px);
+}
+
+.eye-toggle:hover {
+  color:      #E6EDF3;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.eye-toggle:focus-visible {
+  outline:        2px solid #00D4FF;
+  outline-offset: 2px;
+}
+
+.eye-toggle svg {
+  width:  17px;
+  height: 17px;
+  pointer-events: none;
+}
+
+
+/* ── Remember me / Forgot row ───────────────────────────────── */
+.login-meta {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  margin-bottom:   20px;
+  font-size:       13px;
+}
+
+.remember-label {
+  display:     flex;
+  align-items: center;
+  gap:         7px;
+  color:       #8B949E;
+  cursor:      pointer;
+  user-select: none;
+}
+
+.remember-label input[type="checkbox"] {
+  width:         15px;
+  height:        15px;
+  accent-color:  #00D4FF;
+  cursor:        pointer;
+}
+
+.forgot-link {
+  color:      #00D4FF;
+  font-size:  13px;
+  text-decoration: none;
+  transition: color 0.2s ease, text-shadow 0.2s ease;
+}
+
+.forgot-link:hover {
+  color:       #fff;
+  text-shadow: 0 0 8px rgba(0, 212, 255, 0.50);
+}
+
+
+/* ── Login Button ───────────────────────────────────────────── */
+.btn-login {
+  position:      relative;
+  width:         100%;
+  padding:       14px;
+  background:    linear-gradient(135deg, #00D4FF 0%, #0066CC 100%);
+  color:         #fff;
+  font-weight:   700;
+  font-size:     15px;
+  font-family:   inherit;
+  letter-spacing: 0.04em;
+  border-radius: 8px;
+  border:        none;
+  cursor:        pointer;
+  transition:    filter 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+  margin-top:    8px;
+  display:       flex;
+  align-items:   center;
+  justify-content: center;
+  gap:           8px;
+  overflow:      hidden;
+  user-select:   none;
+}
+
+/* Subtle sheen overlay */
+.btn-login::after {
+  content:    '';
+  position:   absolute;
+  inset:      0;
+  background: linear-gradient(180deg,
+    rgba(255,255,255,0.12) 0%,
+    rgba(255,255,255,0)    60%);
+  pointer-events: none;
+}
+
+.btn-login:hover:not(:disabled):not(.loading) {
+  filter:     brightness(1.10);
+  box-shadow: 0 0 24px rgba(0, 212, 255, 0.40);
+}
+
+.btn-login:active:not(:disabled):not(.loading) {
+  transform: scale(0.98);
+  filter:    brightness(0.97);
+}
+
+.btn-login:focus-visible {
+  outline:        2px solid #00D4FF;
+  outline-offset: 3px;
+}
+
+/* Loading state */
+.btn-login.loading {
+  opacity:        0.80;
+  cursor:         not-allowed;
+  pointer-events: none;
+  color:          rgba(255, 255, 255, 0.70);
+}
+
+/* CSS-only spinner via pseudo-element in loading state */
+.btn-login.loading::before {
+  content:       '';
+  display:       inline-block;
+  width:         16px;
+  height:        16px;
+  border:        2px solid rgba(255, 255, 255, 0.30);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation:     loginSpin 0.65s linear infinite;
+  flex-shrink:   0;
+}
+
+/* Disabled (not loading) */
+.btn-login:disabled:not(.loading) {
+  background:     #1E2733;
+  color:          #4A5568;
+  cursor:         not-allowed;
+  box-shadow:     none;
+  filter:         none;
+  pointer-events: none;
+}
+
+
+/* ── Error Box ──────────────────────────────────────────────── */
+.error-box {
+  display:      none;           /* hidden by default; JS adds .visible to show */
+  background:   rgba(255, 68, 68, 0.10);
+  border-left:  4px solid #FF4444;
+  padding:      12px 14px;
+  border-radius: 4px;
+  color:        #FF6B6B;
+  font-size:    13px;
+  line-height:  1.5;
+  margin-top:   12px;
+  animation:    shakeX 0.35s ease;
+}
+
+.error-box.visible {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+}
+
+.error-box .error-icon {
+  flex-shrink: 0;
+  margin-top:  1px;
+  color:       #FF4444;
+  width:       15px;
+  height:      15px;
+}
+
+.error-box .error-text { flex: 1; }
+
+.error-box strong {
+  display:     block;
+  font-weight: 700;
+  color:       #FF8080;
+  margin-bottom: 2px;
+}
+
+
+/* ── Locked / Account-locked Box ───────────────────────────── */
+.locked-box {
+  display:       none;          /* hidden by default; JS adds .visible to show */
+  background:    rgba(255, 140, 0, 0.10);
+  border-left:   4px solid #FF8C00;
+  padding:       12px 14px;
+  border-radius: 4px;
+  color:         #FFB347;
+  font-size:     13px;
+  line-height:   1.5;
+  margin-top:    12px;
+  animation:     shakeX 0.35s ease;
+}
+
+.locked-box.visible {
+  display:     flex;
+  align-items: flex-start;
+  gap:         9px;
+}
+
+.locked-box .locked-icon {
+  flex-shrink: 0;
+  margin-top:  1px;
+  color:       #FF8C00;
+  width:       15px;
+  height:      15px;
+}
+
+.locked-box .locked-text { flex: 1; }
+
+.locked-box strong {
+  display:       block;
+  font-weight:   700;
+  color:         #FFA040;
+  margin-bottom: 2px;
+}
+
+.locked-box .countdown {
+  display:        inline-block;
+  font-weight:    700;
+  color:          #FF8C00;
+  font-variant-numeric: tabular-nums;
+}
+
+
+/* ── Success / 2FA message box ──────────────────────────────── */
+.success-box {
+  display:       none;
+  background:    rgba(0, 255, 136, 0.08);
+  border-left:   4px solid #00FF88;
+  padding:       12px 14px;
+  border-radius: 4px;
+  color:         #40FFAA;
+  font-size:     13px;
+  line-height:   1.5;
+  margin-top:    12px;
+}
+
+.success-box.visible {
+  display:     flex;
+  align-items: flex-start;
+  gap:         9px;
+}
+
+.success-box strong {
+  display:       block;
+  font-weight:   700;
+  color:         #60FFB8;
+  margin-bottom: 2px;
+}
+
+
+/* ── Footer note below card ─────────────────────────────────── */
+.login-footer {
+  text-align:  center;
+  margin-top:  20px;
+  font-size:   12px;
+  color:       #4A5568;
+  line-height: 1.6;
+}
+
+.login-footer a {
+  color:      #00D4FF;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.login-footer a:hover { color: #fff; }
+
+/* Version / environment tag */
+.login-env-tag {
+  display:       inline-flex;
+  align-items:   center;
+  gap:           5px;
+  background:    rgba(0, 212, 255, 0.08);
+  border:        1px solid rgba(0, 212, 255, 0.20);
+  border-radius: 100px;
+  padding:       3px 10px;
+  font-size:     11px;
+  color:         #00D4FF;
+  margin-top:    10px;
+}
+
+.login-env-tag .dot {
+  width:         6px;
+  height:        6px;
+  border-radius: 50%;
+  background:    #00D4FF;
+  animation:     shield-pulse 2s ease-in-out infinite;
+}
+
+
+/* ── Attempt counter (e.g. "2 of 5 attempts") ───────────────── */
+.attempt-counter {
+  text-align:  center;
+  font-size:   12px;
+  color:       #8B949E;
+  margin-top:  10px;
+}
+
+.attempt-counter span {
+  color:       #FF8C00;
+  font-weight: 700;
+}
+
+
+/* ── Keyframe Animations ────────────────────────────────────── */
+
+/* Shield breathing pulse */
+@keyframes shield-pulse {
+  0%,  100% { transform: scale(1); }
+  50%        { transform: scale(1.06); }
+}
+
+/* Spinner inside btn-login.loading */
+@keyframes loginSpin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Card entrance */
+@keyframes cardFadeIn {
+  from {
+    opacity:   0;
+    transform: translateY(18px) scale(0.98);
+  }
+  to {
+    opacity:   1;
+    transform: translateY(0)    scale(1);
+  }
+}
+
+/* Shake on error */
+@keyframes shakeX {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-6px); }
+  40%       { transform: translateX( 5px); }
+  60%       { transform: translateX(-4px); }
+  80%       { transform: translateX( 3px); }
+}
+
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .login-card {
+    padding:       28px 22px;
+    border-radius: 10px;
+  }
+
+  .login-title {
+    font-size: 22px;
+  }
+
+  .shield-icon {
+    width:  58px;
+    height: 58px;
+  }
+}
+
+/* ── End of CyberShield login.css ───────────────────────────── */

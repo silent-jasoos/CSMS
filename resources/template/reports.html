@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CyberShield CSMS — Reports</title>
+  <link rel="stylesheet" href="main.css">
+  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;400;500;600;700&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    /* ─── TOKENS ─────────────────────────────────────────── */
+    :root {
+      --bg-base:       #080c12;
+      --bg-surface:    #0d1320;
+      --bg-card:       #111827;
+      --bg-card-dark:  #0a0f1a;
+      --border:        #1e2d42;
+      --border-bright: #1f4068;
+
+      --cyan:          #00ffe0;
+      --cyan-dim:      rgba(0,255,224,0.10);
+      --cyan-glow:     rgba(0,255,224,0.35);
+      --green:         #00ff88;
+      --green-dim:     rgba(0,255,136,0.12);
+      --red:           #ff4444;
+      --red-dim:       rgba(255,68,68,0.12);
+      --yellow:        #ffc107;
+      --yellow-dim:    rgba(255,193,7,0.12);
+      --blue:          #4488ff;
+      --blue-dim:      rgba(68,136,255,0.12);
+      --orange:        #ff8844;
+
+      --text-primary:  #e2e8f0;
+      --text-secondary:#7a8fa6;
+      --text-muted:    #3d5166;
+
+      --font-ui:       'Rajdhani', sans-serif;
+      --font-mono:     'Share Tech Mono', monospace;
+      --font-body:     'Exo 2', sans-serif;
+
+      --sidebar-w:     240px;
+      --navbar-h:      60px;
+      --radius:        6px;
+      --transition:    0.18s ease;
+    }
+
+    /* ─── RESET ──────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: var(--font-body);
+      background: var(--bg-base);
+      color: var(--text-primary);
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* ─── SIDEBAR ────────────────────────────────────────── */
+    .sidebar {
+      width: var(--sidebar-w);
+      height: 100vh;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      flex-shrink: 0; position: relative; z-index: 100;
+    }
+    .sidebar::before {
+      content: '';
+      position: absolute; top: 0; right: 0;
+      width: 1px; height: 100%;
+      background: linear-gradient(180deg, transparent, var(--cyan-glow), transparent);
+      pointer-events: none;
+    }
+    .sidebar-logo {
+      height: var(--navbar-h);
+      display: flex; align-items: center; gap: 10px;
+      padding: 0 20px; border-bottom: 1px solid var(--border);
+    }
+    .logo-icon {
+      width: 30px; height: 30px;
+      background: linear-gradient(135deg, var(--cyan), #0088cc);
+      clip-path: polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: #080c12;
+      font-family: var(--font-ui); flex-shrink: 0;
+    }
+    .logo-text {
+      font-family: var(--font-ui); font-size: 16px; font-weight: 700;
+      letter-spacing: 2px; color: var(--cyan); text-transform: uppercase;
+    }
+    .sidebar-nav { padding: 16px 0; flex: 1; overflow-y: auto; }
+    .nav-section {
+      padding: 6px 20px 4px;
+      font-size: 9px; letter-spacing: 2.5px; text-transform: uppercase;
+      color: var(--text-muted); font-family: var(--font-ui); font-weight: 600;
+      margin-top: 10px;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 20px;
+      color: var(--text-secondary); text-decoration: none;
+      font-family: var(--font-ui); font-size: 13px; font-weight: 500;
+      letter-spacing: 0.5px; transition: var(--transition);
+      position: relative; cursor: pointer;
+    }
+    .nav-item:hover { color: var(--text-primary); background: rgba(0,255,224,0.04); }
+    .nav-item.active {
+      color: var(--cyan);
+      background: linear-gradient(90deg, var(--cyan-dim), transparent);
+    }
+    .nav-item.active::before {
+      content: ''; position: absolute; left: 0; top: 0;
+      width: 3px; height: 100%;
+      background: var(--cyan); box-shadow: 0 0 8px var(--cyan-glow);
+    }
+    .nav-icon { font-size: 15px; width: 18px; text-align: center; flex-shrink: 0; }
+    .nav-badge {
+      margin-left: auto; background: var(--red); color: #fff;
+      font-size: 10px; font-weight: 700; padding: 1px 6px;
+      border-radius: 10px; font-family: var(--font-ui);
+    }
+    .sidebar-footer {
+      padding: 14px 20px; border-top: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .user-avatar {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: linear-gradient(135deg, #1f4068, #0088cc);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: var(--cyan);
+      flex-shrink: 0; font-family: var(--font-ui);
+    }
+    .user-info { flex: 1; min-width: 0; }
+    .user-name { font-family: var(--font-ui); font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-role { font-size: 10px; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase; }
+
+    /* ─── MAIN ───────────────────────────────────────────── */
+    .main-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+    /* ─── NAVBAR ─────────────────────────────────────────── */
+    .navbar {
+      height: var(--navbar-h);
+      background: var(--bg-surface); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; padding: 0 24px; gap: 16px;
+      flex-shrink: 0; position: relative; z-index: 50;
+    }
+    .navbar-breadcrumb {
+      display: flex; align-items: center; gap: 8px;
+      font-family: var(--font-ui); font-size: 12px;
+      color: var(--text-muted); letter-spacing: 1px;
+    }
+    .navbar-breadcrumb span { color: var(--text-secondary); }
+    .navbar-breadcrumb .current { color: var(--cyan); }
+    .breadcrumb-sep { color: var(--text-muted); }
+    .navbar-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+    .status-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--green); box-shadow: 0 0 6px var(--green);
+      animation: blink 2s ease-in-out infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .status-label { font-family: var(--font-ui); font-size: 11px; color: var(--green); letter-spacing: 1px; }
+    .navbar-time {
+      font-family: var(--font-mono); font-size: 12px;
+      color: var(--text-secondary); letter-spacing: 1px;
+      padding: 4px 10px; background: var(--bg-card-dark);
+      border: 1px solid var(--border); border-radius: var(--radius);
+    }
+    .navbar-btn {
+      width: 34px; height: 34px; border-radius: var(--radius);
+      background: var(--bg-card-dark); border: 1px solid var(--border);
+      color: var(--text-secondary); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: var(--transition); font-size: 14px;
+    }
+    .navbar-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+
+    /* ─── PAGE CONTENT ───────────────────────────────────── */
+    .page-content {
+      flex: 1; overflow-y: auto; padding: 24px;
+      display: flex; flex-direction: column; gap: 22px;
+    }
+
+    /* ─── PAGE HEADER ────────────────────────────────────── */
+    .page-header { display: flex; align-items: center; gap: 16px; }
+    .page-title {
+      font-family: var(--font-ui); font-size: 22px; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .page-title .title-icon { color: var(--cyan); }
+    .page-subtitle {
+      font-size: 12px; color: var(--text-muted); letter-spacing: 1px;
+      margin-top: 3px; font-family: var(--font-ui);
+    }
+
+    /* ─── CARDS / PANELS ─────────────────────────────────── */
+    .card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+    }
+    .card-header {
+      padding: 14px 20px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px;
+      background: var(--bg-card-dark);
+    }
+    .card-header-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 6px var(--cyan); flex-shrink: 0; }
+    .card-title {
+      font-family: var(--font-ui); font-size: 12px; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase; color: var(--cyan);
+    }
+    .card-body { padding: 20px; }
+
+    /* ─── REPORT GENERATOR PANEL ─────────────────────────── */
+    .generator-panel {
+      background: var(--bg-card-dark);
+      border: 1px solid var(--border);
+      border-top: 2px solid var(--cyan);
+      border-radius: var(--radius);
+      padding: 20px 22px;
+      position: relative; overflow: hidden;
+    }
+    .generator-panel::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 50px;
+      background: linear-gradient(180deg, var(--cyan-dim), transparent);
+      pointer-events: none;
+    }
+    .generator-row {
+      display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap;
+    }
+    .gen-field { display: flex; flex-direction: column; gap: 5px; }
+    .gen-label {
+      font-family: var(--font-ui); font-size: 10px; font-weight: 600;
+      letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-muted);
+    }
+    .gen-input, .gen-select {
+      background: var(--bg-surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 7px 12px;
+      color: var(--text-primary); font-family: var(--font-body); font-size: 12px;
+      height: 36px; outline: none; transition: var(--transition);
+    }
+    .gen-input:focus, .gen-select:focus {
+      border-color: var(--cyan); box-shadow: 0 0 0 2px var(--cyan-dim);
+    }
+    .gen-select option { background: var(--bg-card); }
+    .gen-meta {
+      font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);
+      padding: 6px 0; letter-spacing: 0.5px;
+    }
+    .gen-meta span { color: var(--cyan); }
+
+    /* ─── BUTTONS ────────────────────────────────────────── */
+    .btn {
+      height: 36px; padding: 0 18px; border-radius: var(--radius);
+      font-family: var(--font-ui); font-size: 12px; font-weight: 700;
+      letter-spacing: 1px; text-transform: uppercase;
+      cursor: pointer; border: none; outline: none;
+      display: inline-flex; align-items: center; gap: 7px;
+      white-space: nowrap; transition: var(--transition);
+    }
+    .btn-cyan { background: var(--cyan); color: #080c12; }
+    .btn-cyan:hover { background: #00ccb4; box-shadow: 0 0 14px var(--cyan-glow); }
+    .btn-cyan:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-ghost {
+      background: transparent; color: var(--text-secondary);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { border-color: var(--cyan); color: var(--cyan); }
+    .btn-green-outline {
+      background: transparent; color: var(--green);
+      border: 1px solid rgba(0,255,136,0.35);
+    }
+    .btn-green-outline:hover { background: var(--green-dim); }
+    .spinner {
+      width: 14px; height: 14px; border: 2px solid rgba(8,12,18,0.4);
+      border-top-color: #080c12; border-radius: 50%;
+      animation: spin 0.7s linear infinite; display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .btn-cyan.loading .spinner { display: block; }
+    .btn-cyan.loading .btn-label { opacity: 0.7; }
+
+    /* ─── STATS ROW ──────────────────────────────────────── */
+    .stats-row {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+    }
+    .stat-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 18px 20px;
+      position: relative; overflow: hidden; transition: border-color var(--transition);
+    }
+    .stat-card:hover { border-color: var(--border-bright); }
+    .stat-card::after {
+      content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+    }
+    .stat-card.cyan::after  { background: linear-gradient(90deg, transparent, var(--cyan), transparent); }
+    .stat-card.green::after { background: linear-gradient(90deg, transparent, var(--green), transparent); }
+    .stat-card.red::after   { background: linear-gradient(90deg, transparent, var(--red), transparent); }
+    .stat-card.yellow::after{ background: linear-gradient(90deg, transparent, var(--yellow), transparent); }
+    .stat-label {
+      font-family: var(--font-ui); font-size: 10px; font-weight: 600;
+      letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted);
+      margin-bottom: 10px; display: flex; align-items: center; gap: 7px;
+    }
+    .stat-icon { font-size: 13px; }
+    .stat-value {
+      font-family: var(--font-mono); font-size: 28px; font-weight: 400;
+      line-height: 1; margin-bottom: 6px;
+    }
+    .stat-card.cyan  .stat-value { color: var(--cyan); }
+    .stat-card.green .stat-value { color: var(--green); }
+    .stat-card.red   .stat-value { color: var(--red); }
+    .stat-card.yellow .stat-value { color: var(--yellow); }
+    .stat-sub {
+      font-size: 11px; color: var(--text-muted); font-family: var(--font-ui);
+      letter-spacing: 0.5px;
+    }
+    .stat-bg-icon {
+      position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+      font-size: 40px; opacity: 0.05; pointer-events: none;
+    }
+
+    /* ─── SECTION LABEL ──────────────────────────────────── */
+    .section-label {
+      font-family: var(--font-ui); font-size: 10px; font-weight: 700;
+      letter-spacing: 3px; text-transform: uppercase; color: var(--text-muted);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    /* ─── CHART CARDS ────────────────────────────────────── */
+    .chart-full { width: 100%; }
+    .chart-two-col {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+    }
+    .chart-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+    }
+    .chart-card-header {
+      padding: 12px 18px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--bg-card-dark);
+    }
+    .chart-card-title {
+      font-family: var(--font-ui); font-size: 11px; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase; color: var(--text-secondary);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .chart-card-title span { color: var(--cyan); }
+    .chart-card-meta {
+      font-family: var(--font-mono); font-size: 10px; color: var(--text-muted);
+    }
+    .chart-card-body {
+      padding: 18px; position: relative;
+    }
+    .chart-card-body canvas { display: block; }
+
+    /* ─── RECENT REPORTS TABLE ───────────────────────────── */
+    .reports-table-wrap {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+    }
+    .reports-table {
+      width: 100%; border-collapse: collapse; font-size: 12px;
+    }
+    .reports-table thead tr {
+      background: var(--bg-card-dark); border-bottom: 1px solid var(--border);
+    }
+    .reports-table th {
+      padding: 10px 16px; text-align: left;
+      font-family: var(--font-ui); font-size: 10px; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted);
+    }
+    .reports-table tbody tr {
+      border-bottom: 1px solid rgba(30,45,66,0.5);
+      transition: background var(--transition);
+    }
+    .reports-table tbody tr:hover { background: rgba(0,255,224,0.02); }
+    .reports-table tbody tr:last-child { border-bottom: none; }
+    .reports-table td { padding: 10px 16px; vertical-align: middle; }
+    .td-name {
+      font-family: var(--font-ui); font-size: 13px; font-weight: 600;
+      color: var(--text-primary); letter-spacing: 0.5px;
+    }
+    .td-time {
+      font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary);
+    }
+    .type-badge {
+      display: inline-flex; align-items: center;
+      padding: 3px 9px; border-radius: 3px;
+      font-family: var(--font-ui); font-size: 10px; font-weight: 700;
+      letter-spacing: 1.5px; text-transform: uppercase;
+    }
+    .type-security { background: rgba(255,68,68,0.12);  color: var(--red);    border: 1px solid rgba(255,68,68,0.25); }
+    .type-full     { background: rgba(0,255,224,0.08);  color: var(--cyan);   border: 1px solid rgba(0,255,224,0.25); }
+    .type-honeypot { background: rgba(255,193,7,0.10);  color: var(--yellow); border: 1px solid rgba(255,193,7,0.25); }
+    .type-network  { background: rgba(68,136,255,0.10); color: var(--blue);   border: 1px solid rgba(68,136,255,0.25); }
+    .type-user     { background: rgba(0,255,136,0.08);  color: var(--green);  border: 1px solid rgba(0,255,136,0.25); }
+    .dl-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 12px; border-radius: var(--radius);
+      background: transparent; color: var(--cyan);
+      border: 1px solid rgba(0,255,224,0.3);
+      font-family: var(--font-ui); font-size: 10px; font-weight: 700;
+      letter-spacing: 1px; text-transform: uppercase;
+      cursor: pointer; text-decoration: none; transition: var(--transition);
+    }
+    .dl-btn:hover { background: var(--cyan-dim); box-shadow: 0 0 10px var(--cyan-glow); }
+    .file-size { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); }
+
+    /* ─── TOAST ──────────────────────────────────────────── */
+    .toast {
+      position: fixed; bottom: 28px; right: 28px; z-index: 9999;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-left: 3px solid var(--cyan); border-radius: var(--radius);
+      padding: 12px 18px; display: flex; align-items: center; gap: 10px;
+      font-family: var(--font-ui); font-size: 12px; font-weight: 600;
+      letter-spacing: 0.5px; color: var(--text-primary);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      transform: translateX(120%); transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+      min-width: 260px;
+    }
+    .toast.show { transform: translateX(0); }
+    .toast-icon { font-size: 16px; }
+    .toast.success { border-left-color: var(--green); }
+    .toast.error   { border-left-color: var(--red); }
+
+    /* ─── SCROLLBAR ──────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: var(--bg-base); }
+    ::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--cyan-glow); }
+  </style>
+</head>
+<body>
+
+<!-- ══════════ SIDEBAR ══════════ -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">CS</div>
+    <span class="logo-text">CyberShield</span>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Overview</div>
+    <a class="nav-item" href="#"><span class="nav-icon">⬡</span> Dashboard</a>
+    <a class="nav-item" href="#"><span class="nav-icon">◈</span> Threat Map</a>
+
+    <div class="nav-section">Security</div>
+    <a class="nav-item" href="#"><span class="nav-icon">◧</span> IDS / IPS <span class="nav-badge">3</span></a>
+    <a class="nav-item" href="#"><span class="nav-icon">⬢</span> Firewall</a>
+    <a class="nav-item" href="#"><span class="nav-icon">◉</span> Endpoint Detection</a>
+    <a class="nav-item" href="#"><span class="nav-icon">⊠</span> Vulnerabilities <span class="nav-badge">12</span></a>
+
+    <div class="nav-section">Monitoring</div>
+    <a class="nav-item" href="#"><span class="nav-icon">≡</span> System Logs</a>
+    <a class="nav-item" href="#"><span class="nav-icon">◎</span> Alerts <span class="nav-badge">7</span></a>
+    <a class="nav-item" href="#"><span class="nav-icon">▦</span> Network Traffic</a>
+
+    <div class="nav-section">Management</div>
+    <a class="nav-item active" href="#"><span class="nav-icon">📊</span> Reports</a>
+    <a class="nav-item" href="#"><span class="nav-icon">◫</span> Users &amp; Roles</a>
+    <a class="nav-item" href="#"><span class="nav-icon">◱</span> Policies</a>
+    <a class="nav-item" href="#"><span class="nav-icon">⚙</span> Settings</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-avatar">AD</div>
+    <div class="user-info">
+      <div class="user-name">Admin User</div>
+      <div class="user-role">Super Admin</div>
+    </div>
+  </div>
+</aside>
+
+<!-- ══════════ MAIN ══════════ -->
+<div class="main-wrapper">
+
+  <!-- NAVBAR -->
+  <header class="navbar">
+    <div class="navbar-breadcrumb">
+      <span>CSMS</span><span class="breadcrumb-sep">›</span>
+      <span>Management</span><span class="breadcrumb-sep">›</span>
+      <span class="current">Reports</span>
+    </div>
+    <div class="navbar-right">
+      <div class="status-dot"></div>
+      <span class="status-label">LIVE</span>
+      <div class="navbar-time" id="navbarClock">00:00:00 UTC</div>
+      <button class="navbar-btn" title="Notifications">🔔</button>
+      <button class="navbar-btn" title="Fullscreen">⛶</button>
+    </div>
+  </header>
+
+  <main class="page-content">
+
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+      <div>
+        <div class="page-title"><span class="title-icon">📊</span> Reports</div>
+        <div class="page-subtitle">GENERATE · ANALYZE · EXPORT SECURITY REPORTS</div>
+      </div>
+    </div>
+
+    <!-- ── REPORT GENERATOR ── -->
+    <div class="generator-panel">
+      <div class="card-header" style="background:transparent;border:none;padding:0 0 14px 0;">
+        <div class="card-header-dot"></div>
+        <span class="card-title">Report Generator</span>
+      </div>
+      <div class="generator-row">
+        <div class="gen-field">
+          <label class="gen-label">Report Type</label>
+          <select class="gen-select" id="reportType" style="width:180px;">
+            <option value="full">Full Security Report</option>
+            <option value="security">Security Events</option>
+            <option value="honeypot">Honeypot Activity</option>
+            <option value="network">Network Traffic</option>
+            <option value="user">User Activity</option>
+          </select>
+        </div>
+        <div class="gen-field">
+          <label class="gen-label">Date From</label>
+          <input type="date" class="gen-input" id="reportDateFrom" style="width:160px;" />
+        </div>
+        <div class="gen-field">
+          <label class="gen-label">Date To</label>
+          <input type="date" class="gen-input" id="reportDateTo" style="width:160px;" />
+        </div>
+        <div class="gen-field">
+          <label class="gen-label">Format</label>
+          <select class="gen-select" id="reportFormat" style="width:110px;">
+            <option value="pdf">PDF</option>
+            <option value="csv">CSV</option>
+            <option value="json">JSON</option>
+            <option value="xlsx">XLSX</option>
+          </select>
+        </div>
+        <button class="btn btn-cyan" id="generateReportBtn">
+          <div class="spinner"></div>
+          <span class="btn-label">⬇ Generate Report</span>
+        </button>
+        <button class="btn btn-ghost" id="scheduleBtn">⏱ Schedule</button>
+        <div class="gen-meta" style="margin-left:auto;">
+          Last generated: <span id="lastGenTime">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SUMMARY STATS ── -->
+    <div class="section-label">Report Summary</div>
+    <div class="stats-row">
+      <div class="stat-card cyan">
+        <div class="stat-label"><span class="stat-icon">📋</span> Total Events</div>
+        <div class="stat-value" id="reportEvents">—</div>
+        <div class="stat-sub">In selected period</div>
+        <div class="stat-bg-icon">📋</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-label"><span class="stat-icon">⚔</span> Attack Attempts</div>
+        <div class="stat-value" id="reportAttacks">—</div>
+        <div class="stat-sub">Blocked &amp; detected</div>
+        <div class="stat-bg-icon">⚔</div>
+      </div>
+      <div class="stat-card yellow">
+        <div class="stat-label"><span class="stat-icon">🍯</span> Honeypot Hits</div>
+        <div class="stat-value" id="reportHoneypot">—</div>
+        <div class="stat-sub">Unique attacker IPs</div>
+        <div class="stat-bg-icon">🍯</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label"><span class="stat-icon">☣</span> Top Threat</div>
+        <div class="stat-value" id="reportTopThreat" style="font-size:16px;padding-top:6px;">—</div>
+        <div class="stat-sub">Most frequent attack type</div>
+        <div class="stat-bg-icon">☣</div>
+      </div>
+    </div>
+
+    <!-- ── CHARTS ── -->
+    <div class="section-label">Analytics</div>
+
+    <!-- Hourly attacks — full width -->
+    <div class="chart-card chart-full">
+      <div class="chart-card-header">
+        <div class="chart-card-title"><span>◈</span> Attacks Per Hour (Last 24h)</div>
+        <div class="chart-card-meta" id="hourlyMeta">Loading…</div>
+      </div>
+      <div class="chart-card-body" style="height:220px;">
+        <canvas id="hourlyAttacksChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Two-column charts -->
+    <div class="chart-two-col">
+      <!-- Doughnut -->
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div class="chart-card-title"><span>◎</span> Event Distribution</div>
+          <div class="chart-card-meta" id="pieMeta">7 types</div>
+        </div>
+        <div class="chart-card-body" style="height:260px;display:flex;align-items:center;justify-content:center;">
+          <canvas id="eventTypePieChart"></canvas>
+        </div>
+      </div>
+      <!-- Horizontal bar -->
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div class="chart-card-title"><span>⊟</span> Top 5 Attacking IPs</div>
+          <div class="chart-card-meta" id="barMeta">Last 30 days</div>
+        </div>
+        <div class="chart-card-body" style="height:260px;">
+          <canvas id="topIPsChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── RECENT REPORTS TABLE ── -->
+    <div class="section-label">Recent Reports</div>
+    <div class="reports-table-wrap">
+      <table class="reports-table">
+        <thead>
+          <tr>
+            <th>Report Name</th>
+            <th>Generated At</th>
+            <th>Type</th>
+            <th>Size</th>
+            <th>Download</th>
+          </tr>
+        </thead>
+        <tbody id="reportsTableBody">
+          <!-- Populated by JS below -->
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <span class="toast-icon" id="toastIcon">✔</span>
+  <span id="toastMsg">Report generated successfully.</span>
+</div>
+
+<!-- External scripts (Person D) -->
+<script src="/js/dashboard.js"></script>
+<script src="/js/charts.js"></script>
+
+<script>
+/* ════════════════════════════════════════════════════════
+   INLINE BOOTSTRAP — removes itself if /js/charts.js
+   defines window.CyberShieldCharts
+   ════════════════════════════════════════════════════════ */
+
+// ── CLOCK ──────────────────────────────────────────────
+(function clock() {
+  const el = document.getElementById('navbarClock');
+  const pad = n => String(n).padStart(2,'0');
+  function tick() {
+    const n = new Date();
+    el.textContent = `${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())} UTC`;
+  }
+  tick(); setInterval(tick, 1000);
+})();
+
+// ── DEFAULTS FOR DATE PICKERS ──────────────────────────
+(function setDates() {
+  const today = new Date();
+  const fmt = d => d.toISOString().split('T')[0];
+  const past = new Date(today); past.setDate(today.getDate() - 30);
+  document.getElementById('reportDateFrom').value = fmt(past);
+  document.getElementById('reportDateTo').value   = fmt(today);
+})();
+
+// ── TOAST ──────────────────────────────────────────────
+function showToast(msg, type = 'success', icon = '✔') {
+  const t = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent  = msg;
+  document.getElementById('toastIcon').textContent = icon;
+  t.className = `toast ${type}`;
+  void t.offsetWidth;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3800);
+}
+
+// ── REPORT GENERATOR ───────────────────────────────────
+document.getElementById('generateReportBtn').addEventListener('click', async function () {
+  const btn  = this;
+  const from = document.getElementById('reportDateFrom').value;
+  const to   = document.getElementById('reportDateTo').value;
+  const type = document.getElementById('reportType').value;
+  const fmt  = document.getElementById('reportFormat').value;
+
+  if (!from || !to) { showToast('Please select a date range.', 'error', '✘'); return; }
+  if (new Date(from) > new Date(to)) { showToast('Date From must be before Date To.', 'error', '✘'); return; }
+
+  btn.classList.add('loading');
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/reports/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, from, to, format: fmt }),
+    });
+
+    if (!res.ok) throw new Error(`Server error ${res.status}`);
+
+    const disposition = res.headers.get('Content-Disposition') || '';
+    let filename = `cybershield_report_${type}_${from}_${to}.${fmt}`;
+    const match = disposition.match(/filename="?([^"]+)"?/);
+    if (match) filename = match[1];
+
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+
+    document.getElementById('lastGenTime').textContent = new Date().toLocaleTimeString();
+    showToast(`Report downloaded: ${filename}`, 'success', '⬇');
+    refreshStats();
+    prependReportRow(type, fmt);
+  } catch (err) {
+    // Graceful fallback for demo / offline
+    document.getElementById('lastGenTime').textContent = new Date().toLocaleTimeString();
+    showToast('Report generated (demo mode — backend offline).', 'success', '⬇');
+    refreshStats();
+    prependReportRow(type, fmt);
+  } finally {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+});
+
+document.getElementById('scheduleBtn').addEventListener('click', () =>
+  showToast('Report scheduling — connect to /api/reports/schedule.', 'success', '⏱'));
+
+// ── STATS ──────────────────────────────────────────────
+function refreshStats() {
+  const rand = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+  const THREATS = ['SQL Injection', 'Brute Force', 'Port Scan', 'XSS', 'CSRF', 'RCE Attempt'];
+  animateCount('reportEvents',   rand(12000, 48000));
+  animateCount('reportAttacks',  rand(800,   4200));
+  animateCount('reportHoneypot', rand(40,    320));
+  document.getElementById('reportTopThreat').textContent = THREATS[rand(0, THREATS.length-1)];
+}
+
+function animateCount(id, target) {
+  const el = document.getElementById(id);
+  const start = parseInt(el.textContent.replace(/\D/g,'')) || 0;
+  const dur = 900, step = 16;
+  const steps = Math.floor(dur / step);
+  let i = 0;
+  const inc = (target - start) / steps;
+  const timer = setInterval(() => {
+    i++;
+    el.textContent = Math.round(start + inc * i).toLocaleString();
+    if (i >= steps) { el.textContent = target.toLocaleString(); clearInterval(timer); }
+  }, step);
+}
+
+// ── RECENT REPORTS TABLE ───────────────────────────────
+const REPORT_HISTORY = [
+  { name: 'Full Security Report — November 2024', time: '2024-11-15 08:30', type: 'full',     fmt: 'PDF',  size: '2.4 MB' },
+  { name: 'Honeypot Activity — Week 46',          time: '2024-11-13 14:12', type: 'honeypot', fmt: 'CSV',  size: '340 KB' },
+  { name: 'Network Traffic Analysis — Q4',        time: '2024-11-10 09:05', type: 'network',  fmt: 'XLSX', size: '1.1 MB' },
+  { name: 'Security Events — October 2024',       time: '2024-11-01 17:44', type: 'security', fmt: 'PDF',  size: '3.8 MB' },
+  { name: 'User Activity Log — October',          time: '2024-10-31 11:20', type: 'user',     fmt: 'CSV',  size: '620 KB' },
+];
+const TYPE_CLASS = { full:'type-full', security:'type-security', honeypot:'type-honeypot', network:'type-network', user:'type-user' };
+const TYPE_LABEL = { full:'Full Report', security:'Security', honeypot:'Honeypot', network:'Network', user:'User Activity' };
+
+function renderReportsTable(list) {
+  document.getElementById('reportsTableBody').innerHTML = list.map(r => `
+    <tr>
+      <td class="td-name">${r.name}</td>
+      <td class="td-time">${r.time}</td>
+      <td><span class="type-badge ${TYPE_CLASS[r.type]}">${TYPE_LABEL[r.type]}</span></td>
+      <td class="file-size">${r.size || '—'}</td>
+      <td><a class="dl-btn" href="#" onclick="return false">⬇ ${r.fmt}</a></td>
+    </tr>`).join('');
+}
+renderReportsTable(REPORT_HISTORY);
+
+function prependReportRow(type, fmt) {
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  REPORT_HISTORY.unshift({
+    name: `${TYPE_LABEL[type] || type} — ${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`,
+    time: `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`,
+    type, fmt: fmt.toUpperCase(), size: `${(Math.random()*3+0.3).toFixed(1)} MB`,
+  });
+  renderReportsTable(REPORT_HISTORY);
+}
+
+// ── CHART HELPERS ──────────────────────────────────────
+const CHART_DEFAULTS = {
+  color: '#7a8fa6',
+  gridColor: 'rgba(30,45,66,0.6)',
+  tickFont: { family: "'Share Tech Mono', monospace", size: 10 },
+};
+
+function buildHourlyChart() {
+  const hours = Array.from({ length: 24 }, (_, i) => {
+    const d = new Date(); d.setHours(d.getHours() - (23 - i), 0, 0, 0);
+    return `${String(d.getHours()).padStart(2,'0')}:00`;
+  });
+  const data = hours.map(() => Math.floor(Math.random() * 80 + 2));
+  const peaks = [...data].sort((a,b)=>b-a).slice(0,3);
+  const bg = data.map(v => peaks.includes(v) ? 'rgba(255,68,68,0.7)' : 'rgba(0,255,224,0.6)');
+
+  const ctx = document.getElementById('hourlyAttacksChart').getContext('2d');
+
+  const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+  gradient.addColorStop(0,   'rgba(0,255,224,0.25)');
+  gradient.addColorStop(1,   'rgba(0,255,224,0)');
+
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: hours,
+      datasets: [{
+        label: 'Attacks',
+        data,
+        borderColor: 'rgba(0,255,224,0.8)',
+        borderWidth: 2,
+        backgroundColor: gradient,
+        pointBackgroundColor: bg,
+        pointBorderColor: 'transparent',
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        fill: true,
+        tension: 0.4,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0a0f1a',
+          borderColor: '#1e2d42', borderWidth: 1,
+          titleFont: { family: "'Share Tech Mono', monospace", size: 11 },
+          bodyFont:  { family: "'Share Tech Mono', monospace", size: 11 },
+          titleColor: '#00ffe0', bodyColor: '#e2e8f0',
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: CHART_DEFAULTS.gridColor },
+          ticks: { color: CHART_DEFAULTS.color, font: CHART_DEFAULTS.tickFont, maxTicksLimit: 12 },
+          border: { color: '#1e2d42' },
+        },
+        y: {
+          grid: { color: CHART_DEFAULTS.gridColor },
+          ticks: { color: CHART_DEFAULTS.color, font: CHART_DEFAULTS.tickFont },
+          border: { color: '#1e2d42' },
+          beginAtZero: true,
+        }
+      }
+    }
+  });
+
+  const total = data.reduce((a,b)=>a+b,0);
+  document.getElementById('hourlyMeta').textContent = `Total: ${total} attacks in last 24h`;
+}
+
+function buildPieChart() {
+  const labels = ['Login Fail','Firewall Block','IDS Alert','Port Scan','Brute Force','Config Change','Policy Violation'];
+  const data   = [340, 280, 195, 154, 122, 87, 64];
+  const colors = [
+    'rgba(255,68,68,0.85)', 'rgba(255,136,68,0.85)', 'rgba(255,193,7,0.85)',
+    'rgba(0,255,224,0.85)', 'rgba(68,136,255,0.85)',  'rgba(0,255,136,0.75)',
+    'rgba(180,100,255,0.75)'
+  ];
+
+  const ctx = document.getElementById('eventTypePieChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{ data, backgroundColor: colors, borderColor: '#0a0f1a', borderWidth: 3, hoverOffset: 8 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '65%',
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: {
+            color: '#7a8fa6',
+            font: { family: "'Rajdhani', sans-serif", size: 11, weight: '600' },
+            boxWidth: 12, padding: 10,
+          }
+        },
+        tooltip: {
+          backgroundColor: '#0a0f1a', borderColor: '#1e2d42', borderWidth: 1,
+          titleFont: { family: "'Share Tech Mono', monospace", size: 11 },
+          bodyFont:  { family: "'Share Tech Mono', monospace", size: 11 },
+          titleColor: '#00ffe0', bodyColor: '#e2e8f0',
+        }
+      }
+    }
+  });
+
+  document.getElementById('pieMeta').textContent = `${labels.length} event types`;
+}
+
+function buildBarChart() {
+  const ips   = ['203.0.113.47','198.51.100.22','185.220.101.5','45.33.32.156','104.21.8.99'];
+  const hits  = [847, 612, 489, 341, 278];
+  const colors = hits.map(v =>
+    v > 700 ? 'rgba(255,68,68,0.75)' :
+    v > 500 ? 'rgba(255,136,68,0.75)' :
+    v > 400 ? 'rgba(255,193,7,0.75)' :
+    'rgba(0,255,224,0.6)'
+  );
+
+  const ctx = document.getElementById('topIPsChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ips,
+      datasets: [{
+        label: 'Attempts',
+        data: hits,
+        backgroundColor: colors,
+        borderColor: 'transparent',
+        borderRadius: 4,
+        barThickness: 22,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      indexAxis: 'y',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0a0f1a', borderColor: '#1e2d42', borderWidth: 1,
+          titleFont: { family: "'Share Tech Mono', monospace", size: 11 },
+          bodyFont:  { family: "'Share Tech Mono', monospace", size: 11 },
+          titleColor: '#00ffe0', bodyColor: '#e2e8f0',
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: CHART_DEFAULTS.gridColor },
+          ticks: { color: CHART_DEFAULTS.color, font: CHART_DEFAULTS.tickFont },
+          border: { color: '#1e2d42' },
+          beginAtZero: true,
+        },
+        y: {
+          grid: { color: 'transparent' },
+          ticks: { color: CHART_DEFAULTS.color, font: { family: "'Share Tech Mono', monospace", size: 10 } },
+          border: { color: '#1e2d42' },
+        }
+      }
+    }
+  });
+}
+
+// ── INIT ───────────────────────────────────────────────
+// Only render charts if /js/charts.js hasn't already done it
+window.addEventListener('load', () => {
+  if (!window.CyberShieldCharts) {
+    buildHourlyChart();
+    buildPieChart();
+    buildBarChart();
+    refreshStats();
+  }
+});
+</script>
+</body>
+</html>

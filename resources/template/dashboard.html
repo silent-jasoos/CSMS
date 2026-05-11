@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="main.css">
+    <title>Dashboard — CyberShield CSMS</title>
+
+    <!-- Global theme -->
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        /* ── Google Font ─────────────────────────────────────────────── */
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@400;600;700&display=swap');
+
+        /* ── CSS Variables ───────────────────────────────────────────── */
+        :root {
+            --bg-primary:    #0A0E1A;
+            --bg-secondary:  #0D1117;
+            --bg-card:       #161B22;
+            --accent-cyan:   #00D4FF;
+            --accent-blue:   #0066CC;
+            --accent-red:    #FF4444;
+            --accent-orange: #FF8C00;
+            --accent-purple: #B44FFF;
+            --accent-green:  #00FF88;
+            --text-primary:  #E6EDF3;
+            --text-muted:    #8B949E;
+            --border-dim:    #30363D;
+            --sidebar-w:     250px;
+            --navbar-h:      60px;
+        }
+
+        /* ── Reset ───────────────────────────────────────────────────── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body {
+            height: 100%;
+            background: var(--bg-primary);
+            font-family: 'Exo 2', 'Segoe UI', system-ui, sans-serif;
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ── Scrollbar ───────────────────────────────────────────────── */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-primary); }
+        ::-webkit-scrollbar-thumb { background: var(--border-dim); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4D5562; }
+
+        /* ════════════════════════════════════════════════════════════════
+           SIDEBAR
+        ════════════════════════════════════════════════════════════════ */
+        .sidebar {
+            position: fixed;
+            top: 0; left: 0;
+            width: var(--sidebar-w);
+            height: 100vh;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--accent-cyan);
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        /* Logo */
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 20px 20px 18px;
+            border-bottom: 1px solid var(--border-dim);
+            text-decoration: none;
+        }
+
+        .sidebar-logo-icon {
+            font-size: 22px;
+            line-height: 1;
+            filter: drop-shadow(0 0 6px rgba(0,212,255,0.6));
+        }
+
+        .sidebar-logo-text {
+            font-family: 'Exo 2', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            letter-spacing: 0.04em;
+            line-height: 1.2;
+        }
+
+        .sidebar-logo-sub {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 10px;
+            color: var(--text-muted);
+            letter-spacing: 0.12em;
+        }
+
+        /* Section label */
+        .nav-section-label {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 10px;
+            color: #3D444D;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            padding: 18px 20px 6px;
+        }
+
+        /* Nav links */
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.18s, background 0.18s, border-left-color 0.18s;
+            border-left: 3px solid transparent;
+            position: relative;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            color: var(--accent-cyan);
+            border-left-color: var(--accent-cyan);
+            background: rgba(0,212,255,0.08);
+        }
+
+        .nav-link .nav-icon {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+            opacity: 0.7;
+            transition: opacity 0.18s;
+        }
+
+        .nav-link:hover .nav-icon,
+        .nav-link.active .nav-icon { opacity: 1; }
+
+        .nav-badge {
+            margin-left: auto;
+            background: var(--accent-red);
+            color: #fff;
+            font-size: 10px;
+            font-weight: 700;
+            font-family: 'Share Tech Mono', monospace;
+            padding: 2px 6px;
+            border-radius: 10px;
+            min-width: 18px;
+            text-align: center;
+            animation: badgePulse 2s ease-in-out infinite;
+        }
+
+        @keyframes badgePulse {
+            0%,100% { box-shadow: 0 0 0 0 rgba(255,68,68,0.4); }
+            50%      { box-shadow: 0 0 0 4px rgba(255,68,68,0); }
+        }
+
+        /* Sidebar footer */
+        .sidebar-footer {
+            margin-top: auto;
+            padding: 16px 20px;
+            border-top: 1px solid var(--border-dim);
+        }
+
+        .sidebar-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            box-shadow: 0 0 6px var(--accent-green);
+            animation: dotBreathe 2.5s ease-in-out infinite;
+        }
+
+        @keyframes dotBreathe {
+            0%,100% { opacity: 1; }
+            50%      { opacity: 0.4; }
+        }
+
+        /* ════════════════════════════════════════════════════════════════
+           TOP NAVBAR
+        ════════════════════════════════════════════════════════════════ */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: var(--sidebar-w);
+            right: 0;
+            height: var(--navbar-h);
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-dim);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 99;
+        }
+
+        /* Page breadcrumb */
+        .navbar-breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-muted);
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        .navbar-breadcrumb .current {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .navbar-breadcrumb svg { color: var(--border-dim); }
+
+        /* Right side */
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        /* System time */
+        .navbar-time {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            color: var(--text-muted);
+            letter-spacing: 0.08em;
+        }
+
+        /* Alert bell */
+        .bell-wrapper {
+            position: relative;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: color 0.2s;
+        }
+
+        .bell-wrapper:hover { color: var(--accent-cyan); }
+
+        #alertBadge {
+            position: absolute;
+            top: -5px;
+            right: -6px;
+            background: var(--accent-red);
+            color: #fff;
+            font-size: 9px;
+            font-weight: 700;
+            font-family: 'Share Tech Mono', monospace;
+            min-width: 16px;
+            height: 16px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 3px;
+            border: 2px solid var(--bg-secondary);
+        }
+
+        /* User pill */
+        .user-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-dim);
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .user-pill:hover { border-color: var(--accent-cyan); }
+
+        .user-avatar {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        #usernameDisplay { color: var(--text-primary); }
+
+        /* Logout button */
+        .btn-logout {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: transparent;
+            border: 1px solid var(--border-dim);
+            color: var(--text-muted);
+            font-family: 'Exo 2', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 7px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: border-color 0.2s, color 0.2s, background 0.2s;
+            letter-spacing: 0.05em;
+        }
+
+        .btn-logout:hover {
+            border-color: var(--accent-red);
+            color: var(--accent-red);
+            background: rgba(255,68,68,0.06);
+        }
+
+        /* ════════════════════════════════════════════════════════════════
+           MAIN CONTENT
+        ════════════════════════════════════════════════════════════════ */
+        .main-content {
+            margin-left: var(--sidebar-w);
+            margin-top: var(--navbar-h);
+            padding: 24px;
+            background: var(--bg-primary);
+            min-height: 100vh;
+        }
+
+        /* Page header */
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+
+        .page-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .page-title span {
+            color: var(--accent-cyan);
+        }
+
+        .page-subtitle {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 3px;
+            letter-spacing: 0.06em;
+        }
+
+        .last-updated {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .last-updated .live-dot {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            box-shadow: 0 0 6px var(--accent-green);
+            animation: dotBreathe 2.5s ease-in-out infinite;
+        }
+
+        /* ── Card ────────────────────────────────────────────────────── */
+        .card {
+            background: var(--bg-card);
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid var(--border-dim);
+            margin-bottom: 16px;
+            transition: border-color 0.2s;
+        }
+
+        .card:hover { border-color: rgba(0,212,255,0.2); }
+
+        .card-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-title::before {
+            content: '';
+            display: inline-block;
+            width: 3px;
+            height: 14px;
+            background: var(--accent-cyan);
+            border-radius: 2px;
+        }
+
+        /* ── Stats Grid ──────────────────────────────────────────────── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid var(--border-dim);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: border-color 0.2s, transform 0.2s;
+            cursor: default;
+        }
+
+        .stat-card:hover {
+            border-color: rgba(0,212,255,0.25);
+            transform: translateY(-2px);
+        }
+
+        .stat-left { display: flex; flex-direction: column; gap: 4px; }
+
+        .stat-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-family: 'Share Tech Mono', monospace;
+            line-height: 1.1;
+            transition: color 0.3s;
+        }
+
+        .stat-trend {
+            font-size: 11px;
+            font-family: 'Share Tech Mono', monospace;
+            color: var(--text-muted);
+        }
+
+        .stat-trend.up { color: var(--accent-red); }
+        .stat-trend.down { color: var(--accent-green); }
+
+        /* Icon circle */
+        .stat-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+
+        .stat-icon.blue   { background: rgba(0,102,204,0.2);  box-shadow: 0 0 16px rgba(0,102,204,0.2); }
+        .stat-icon.red    { background: rgba(255,68,68,0.15);  box-shadow: 0 0 16px rgba(255,68,68,0.15); }
+        .stat-icon.orange { background: rgba(255,140,0,0.15);  box-shadow: 0 0 16px rgba(255,140,0,0.15); }
+        .stat-icon.purple { background: rgba(180,79,255,0.15); box-shadow: 0 0 16px rgba(180,79,255,0.15); }
+
+        /* Blinking animation for activeThreats */
+        @keyframes blink {
+            0%, 100% { color: white; }
+            50%       { color: var(--accent-red); }
+        }
+
+        .blinking { animation: blink 1s ease-in-out infinite; }
+
+        /* ── Charts Row ──────────────────────────────────────────────── */
+        .charts-row {
+            display: grid;
+            grid-template-columns: 60fr 40fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 280px;
+        }
+
+        /* ── Activity Feed ───────────────────────────────────────────── */
+        .table-scroll { overflow-x: auto; }
+
+        .activity-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .activity-table thead tr {
+            background: rgba(0,212,255,0.05);
+            border-bottom: 1px solid var(--border-dim);
+        }
+
+        .activity-table th {
+            padding: 10px 14px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            white-space: nowrap;
+        }
+
+        .activity-table td {
+            padding: 11px 14px;
+            border-bottom: 1px solid rgba(48,54,61,0.6);
+            color: var(--text-primary);
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        .activity-table tbody tr {
+            transition: background 0.15s;
+        }
+
+        .activity-table tbody tr:hover {
+            background: rgba(0,212,255,0.04);
+        }
+
+        /* Severity badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            font-family: 'Share Tech Mono', monospace;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .badge-low      { background: rgba(158,158,158,0.15); color: #9E9E9E; }
+        .badge-medium   { background: rgba(255,193,7,0.15);   color: #FFC107; }
+        .badge-high     { background: rgba(255,140,0,0.15);   color: var(--accent-orange); }
+        .badge-critical {
+            background: rgba(255,68,68,0.15);
+            color: var(--accent-red);
+            animation: blink 1.2s ease-in-out infinite;
+        }
+        .badge-info     { background: rgba(0,212,255,0.12);   color: var(--accent-cyan); }
+
+        /* Empty state */
+        .feed-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 13px;
+            letter-spacing: 0.06em;
+        }
+
+        /* ── Lab PC Status ───────────────────────────────────────────── */
+        .pc-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+        }
+
+        .pc-box {
+            background: rgba(0,212,255,0.04);
+            border: 1px solid var(--border-dim);
+            border-radius: 8px;
+            padding: 18px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .pc-box:hover {
+            border-color: rgba(0,212,255,0.3);
+            background: rgba(0,212,255,0.07);
+        }
+
+        .pc-info { display: flex; flex-direction: column; gap: 4px; }
+
+        .pc-name {
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .pc-ip {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .pc-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            color: var(--accent-green);
+            font-weight: 600;
+        }
+
+        .pc-status .online-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            box-shadow: 0 0 8px var(--accent-green);
+            animation: dotBreathe 2.5s ease-in-out infinite;
+        }
+
+        .pc-icon {
+            font-size: 26px;
+            opacity: 0.6;
+        }
+
+        /* ── Utility ─────────────────────────────────────────────────── */
+        .row-success { background: rgba(0,255,136,0.04); }
+        .row-danger  { background: rgba(255,68,68,0.05); }
+        .row-warning { background: rgba(255,193,7,0.04); }
+
+        .module-tag {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            color: var(--text-muted);
+            background: rgba(48,54,61,0.5);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .ip-text {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            color: var(--accent-cyan);
+        }
+
+        .time-text {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     SIDEBAR
+════════════════════════════════════════════════════════════════════ -->
+<aside class="sidebar">
+
+    <!-- Logo -->
+    <a href="/dashboard" class="sidebar-logo">
+        <span class="sidebar-logo-icon">🛡️</span>
+        <div>
+            <div class="sidebar-logo-text">CyberShield</div>
+            <div class="sidebar-logo-sub">CSMS v2.4</div>
+        </div>
+    </a>
+
+    <!-- Nav -->
+    <nav style="flex:1; padding-top:8px;">
+        <div class="nav-section-label">Main Menu</div>
+
+        <a href="/dashboard" class="nav-link active" th:href="@{/dashboard}">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+            </svg>
+            Dashboard
+        </a>
+
+        <a href="firewall.html" class="nav-link" th:href="@{/firewall}">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            Firewall Rules
+        </a>
+
+        <a href="ids.html" class="nav-link" th:href="@{/ids}">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            IDS Alerts
+            <span class="nav-badge" id="idsBadge">3</span>
+        </a>
+
+        <a href="honeypot.html" class="nav-link" th:href="@{/honeypot}">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/>
+            </svg>
+            Honeypot
+        </a>
+
+        <a href="logs.html" class="nav-link" th:href="@{/logs}">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+                <polyline points="10 9 9 9 8 9"/>
+            </svg>
+            Logs
+        </a>
+
+        <a href="reports.html" class="nav-link" th:href="@{/reports}">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="20" x2="18" y2="10"/>
+                <line x1="12" y1="20" x2="12" y2="4"/>
+                <line x1="6"  y1="20" x2="6"  y2="14"/>
+            </svg>
+            Reports
+        </a>
+
+        <div class="nav-section-label">Administration</div>
+
+        <a href="/users" class="nav-link" th:href="@{/users}">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 00-3-3.87"/>
+                <path d="M16 3.13a4 4 0 010 7.75"/>
+            </svg>
+            Users
+        </a>
+
+        <a href="/settings" class="nav-link" th:href="@{/settings}">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+            </svg>
+            Settings
+        </a>
+    </nav>
+
+    <!-- Sidebar footer -->
+    <div class="sidebar-footer">
+        <div class="sidebar-status">
+            <span class="status-dot"></span>
+            System Operational
+        </div>
+    </div>
+</aside>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     TOP NAVBAR
+════════════════════════════════════════════════════════════════════ -->
+<header class="navbar">
+    <!-- Breadcrumb -->
+    <div class="navbar-breadcrumb">
+        <span>CSMS</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        <span class="current">Dashboard</span>
+    </div>
+
+    <!-- Right controls -->
+    <div class="navbar-right">
+        <div class="navbar-time" id="navbarClock">--:--:--</div>
+
+        <!-- Bell / Alerts -->
+        <div class="bell-wrapper" title="Alerts" onclick="window.location.href='/ids'">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                <path d="M13.73 21a2 2 0 01-3.46 0"/>
+            </svg>
+            <span id="alertBadge">3</span>
+        </div>
+
+        <!-- User pill -->
+        <div class="user-pill">
+            <div class="user-avatar" id="userAvatarInitial">A</div>
+            <span id="usernameDisplay">AGHA</span>
+        </div>
+
+        <!-- Logout -->
+        <button class="btn-logout" onclick="handleLogout()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            LOGOUT
+        </button>
+    </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     MAIN CONTENT
+════════════════════════════════════════════════════════════════════ -->
+<main class="main-content">
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Security <span>Overview</span></h1>
+            <p class="page-subtitle">ADMIN CONTROL CENTER &nbsp;·&nbsp; REAL-TIME MONITORING</p>
+        </div>
+        <div class="last-updated">
+            <span class="live-dot"></span>
+            Live &nbsp;·&nbsp; Updates every 5s
+        </div>
+    </div>
+
+    <!-- ── 1. Stats Row ─────────────────────────────────────────────── -->
+    <div class="stats-grid">
+
+        <!-- Total Events -->
+        <div class="stat-card">
+            <div class="stat-left">
+                <span class="stat-label">Total Events</span>
+                <span class="stat-value" id="totalEvents">—</span>
+                <span class="stat-trend up" id="totalEventsTrend">↑ loading...</span>
+            </div>
+            <div class="stat-icon blue">📊</div>
+        </div>
+
+        <!-- Active Threats -->
+        <div class="stat-card">
+            <div class="stat-left">
+                <span class="stat-label">Active Threats</span>
+                <span class="stat-value" id="activeThreats">—</span>
+                <span class="stat-trend up" id="activeThreatsTrend">↑ loading...</span>
+            </div>
+            <div class="stat-icon red">⚠️</div>
+        </div>
+
+        <!-- Blocked Connections -->
+        <div class="stat-card">
+            <div class="stat-left">
+                <span class="stat-label">Blocked Connections</span>
+                <span class="stat-value" id="blockedConnections">—</span>
+                <span class="stat-trend down" id="blockedTrend">↓ loading...</span>
+            </div>
+            <div class="stat-icon orange">🚫</div>
+        </div>
+
+        <!-- Honeypot Captures -->
+        <div class="stat-card">
+            <div class="stat-left">
+                <span class="stat-label">Honeypot Captures</span>
+                <span class="stat-value" id="honeypotCaptures">—</span>
+                <span class="stat-trend" id="honeypotTrend">— loading...</span>
+            </div>
+            <div class="stat-icon purple">🍯</div>
+        </div>
+
+    </div>
+
+    <!-- ── 2. Charts Row ────────────────────────────────────────────── -->
+    <div class="charts-row">
+
+        <!-- Attacks Chart (60%) -->
+        <div class="card">
+            <div class="card-title">Attacks Last 24 Hours</div>
+            <div class="chart-wrapper">
+                <canvas id="attacksChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Threat Breakdown (40%) -->
+        <div class="card">
+            <div class="card-title">Threat Breakdown</div>
+            <div class="chart-wrapper">
+                <canvas id="threatChart"></canvas>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ── 3. Live Activity Feed ────────────────────────────────────── -->
+    <div class="card">
+        <div class="card-title" style="justify-content:space-between; display:flex; align-items:center;">
+            <span style="display:flex;align-items:center;gap:8px;">
+                <span style="display:inline-block;width:3px;height:14px;background:var(--accent-cyan);border-radius:2px;"></span>
+                Live Activity Feed
+            </span>
+            <span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-muted);font-weight:400;letter-spacing:0.06em;" id="feedCount">0 events</span>
+        </div>
+
+        <div class="table-scroll">
+            <table class="activity-table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Event</th>
+                        <th>Source IP</th>
+                        <th>User</th>
+                        <th>Severity</th>
+                        <th>Module</th>
+                    </tr>
+                </thead>
+                <tbody id="activityFeed">
+                    <tr>
+                        <td colspan="6">
+                            <div class="feed-empty">⏳ &nbsp; Waiting for activity data from dashboard.js...</div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ── 4. Lab PCs Status ────────────────────────────────────────── -->
+    <div class="card">
+        <div class="card-title">Lab PC Status</div>
+        <div class="pc-grid">
+
+            <div class="pc-box">
+                <div class="pc-info">
+                    <span class="pc-name">PC 1</span>
+                    <span class="pc-ip">192.168.1.101</span>
+                    <div class="pc-status">
+                        <span class="online-dot"></span>
+                        Online
+                    </div>
+                </div>
+                <span class="pc-icon">🖥️</span>
+            </div>
+
+            <div class="pc-box">
+                <div class="pc-info">
+                    <span class="pc-name">PC 2</span>
+                    <span class="pc-ip">192.168.1.102</span>
+                    <div class="pc-status">
+                        <span class="online-dot"></span>
+                        Online
+                    </div>
+                </div>
+                <span class="pc-icon">🖥️</span>
+            </div>
+
+            <div class="pc-box">
+                <div class="pc-info">
+                    <span class="pc-name">PC 3</span>
+                    <span class="pc-ip">192.168.1.103</span>
+                    <div class="pc-status">
+                        <span class="online-dot"></span>
+                        Online
+                    </div>
+                </div>
+                <span class="pc-icon">🖥️</span>
+            </div>
+
+            <div class="pc-box">
+                <div class="pc-info">
+                    <span class="pc-name">PC 4</span>
+                    <span class="pc-ip">192.168.1.104</span>
+                    <div class="pc-status">
+                        <span class="online-dot"></span>
+                        Online
+                    </div>
+                </div>
+                <span class="pc-icon">🖥️</span>
+            </div>
+
+        </div>
+    </div>
+
+</main>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     SCRIPTS
+════════════════════════════════════════════════════════════════════ -->
+
+<!-- Chart.js default config (dark theme) -->
+<script>
+    /* ── Clock ───────────────────────────────────────────────────────── */
+    function updateClock() {
+        const now = new Date();
+        document.getElementById('navbarClock').textContent =
+            now.toLocaleTimeString('en-GB', { hour12: false });
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    /* ── Read username from localStorage ─────────────────────────────── */
+    (function() {
+        // dashboard.js may populate this; we show a fallback here
+        try {
+            const token = localStorage.getItem('csms_token');
+            if (token) {
+                // Show first letter as avatar
+                const username = localStorage.getItem('csms_username') || 'Admin';
+                document.getElementById('usernameDisplay').textContent = username;
+                document.getElementById('userAvatarInitial').textContent =
+                    username.charAt(0).toUpperCase();
+            }
+        } catch(e) {}
+    })();
+
+    /* ── Logout ──────────────────────────────────────────────────────── */
+    function handleLogout() {
+        localStorage.removeItem('csms_token');
+        localStorage.removeItem('csms_username');
+        window.location.href = '/';
+    }
+
+    /* ── Chart.js global dark defaults ───────────────────────────────── */
+    Chart.defaults.color          = '#8B949E';
+    Chart.defaults.borderColor    = '#30363D';
+    Chart.defaults.font.family    = "'Share Tech Mono', monospace";
+    Chart.defaults.font.size      = 11;
+    Chart.defaults.plugins.legend.labels.boxWidth = 12;
+    Chart.defaults.plugins.legend.labels.padding  = 16;
+
+    /* ── Fallback placeholder charts (overridden by dashboard.js) ─────── *
+     *  dashboard.js (Person D) should call window.initAttacksChart(data)  *
+     *  and window.initThreatChart(data). Until it does, we show a         *
+     *  skeleton so the page doesn't look broken during development.       */
+    window.addEventListener('DOMContentLoaded', () => {
+        const placeholderHours = Array.from({length:24}, (_,i) => `${String(i).padStart(2,'0')}:00`);
+        const placeholderData  = Array.from({length:24}, () => Math.floor(Math.random()*60 + 5));
+
+        /* Attacks line chart */
+        const aCtx = document.getElementById('attacksChart').getContext('2d');
+        window._attacksChartInstance = new Chart(aCtx, {
+            type: 'line',
+            data: {
+                labels: placeholderHours,
+                datasets: [{
+                    label: 'Attacks',
+                    data: placeholderData,
+                    borderColor: '#00D4FF',
+                    backgroundColor: 'rgba(0,212,255,0.07)',
+                    borderWidth: 2,
+                    pointRadius: 3,
+                    pointBackgroundColor: '#00D4FF',
+                    pointHoverRadius: 5,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { color: 'rgba(48,54,61,0.6)' }, ticks: { maxTicksLimit: 8 } },
+                    y: { grid: { color: 'rgba(48,54,61,0.6)' }, beginAtZero: true }
+                }
+            }
+        });
+
+        /* Threat doughnut chart */
+        const tCtx = document.getElementById('threatChart').getContext('2d');
+        window._threatChartInstance = new Chart(tCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Brute Force', 'Port Scan', 'SQL Injection', 'DDoS', 'Other'],
+                datasets: [{
+                    data: [32, 24, 18, 14, 12],
+                    backgroundColor: [
+                        'rgba(255,68,68,0.8)',
+                        'rgba(255,140,0,0.8)',
+                        'rgba(180,79,255,0.8)',
+                        'rgba(0,212,255,0.8)',
+                        'rgba(139,148,158,0.8)'
+                    ],
+                    borderColor: '#161B22',
+                    borderWidth: 3,
+                    hoverOffset: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '65%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: '#8B949E', padding: 12 }
+                    }
+                }
+            }
+        });
+    });
+</script>
+
+<!-- Person D's dashboard logic (fetches live data, updates stat values & charts) -->
+<script th:src="@{/js/dashboard.js}" defer></script>
+
+</body>
+</html>

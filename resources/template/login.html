@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberShield CSMS — Secure Access</title>
+    <link rel="stylesheet" href="login.css">
+    <style>
+        /* ── Google Font ─────────────────────────────────────────────── */
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@400;600;700&display=swap');
+
+        /* ── CSS Variables ───────────────────────────────────────────── */
+        :root {
+            --bg-primary:   #0A0E1A;
+            --bg-card:      #0D1117;
+            --bg-input:     #0A0E1A;
+            --accent-cyan:  #00D4FF;
+            --accent-blue:  #0066CC;
+            --accent-red:   #FF4444;
+            --accent-orange:#FF8C00;
+            --text-primary: #E6EDF3;
+            --text-muted:   #8B949E;
+            --border-dim:   #30363D;
+        }
+
+        /* ── Reset & Base ────────────────────────────────────────────── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body {
+            height: 100%;
+            background: var(--bg-primary);
+            font-family: 'Exo 2', 'Segoe UI', system-ui, sans-serif;
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ── Animated Grid Background ────────────────────────────────── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(0,212,255,0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,212,255,0.04) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+            animation: gridDrift 20s linear infinite;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse 80% 60% at 50% 50%, rgba(0,212,255,0.06) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes gridDrift {
+            0%   { background-position: 0 0, 0 0; }
+            100% { background-position: 40px 40px, 40px 40px; }
+        }
+
+        /* ── Page Wrapper ────────────────────────────────────────────── */
+        .page-wrapper {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        /* ── Login Card ──────────────────────────────────────────────── */
+        .login-card {
+            width: 100%;
+            max-width: 420px;
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow:
+                0 0 60px rgba(0,212,255,0.12),
+                0 0 0 1px rgba(0,212,255,0.08),
+                inset 0 1px 0 rgba(255,255,255,0.04);
+            animation: cardReveal 0.6s cubic-bezier(0.16,1,0.3,1) both;
+        }
+
+        @keyframes cardReveal {
+            from { opacity: 0; transform: translateY(24px) scale(0.97); }
+            to   { opacity: 1; transform: translateY(0)   scale(1);    }
+        }
+
+        /* ── Shield Icon ─────────────────────────────────────────────── */
+        .shield-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .shield-icon {
+            width: 72px;
+            height: 72px;
+            animation: shieldPulse 2s ease-in-out infinite;
+            filter: drop-shadow(0 0 12px rgba(0,212,255,0.5));
+        }
+
+        @keyframes shieldPulse {
+            0%, 100% { transform: scale(1.0); filter: drop-shadow(0 0 10px rgba(0,212,255,0.45)); }
+            50%       { transform: scale(1.05); filter: drop-shadow(0 0 22px rgba(0,212,255,0.75)); }
+        }
+
+        /* ── Title & Subtitle ────────────────────────────────────────── */
+        .login-title {
+            font-family: 'Exo 2', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            text-align: center;
+            margin: 10px 0 4px;
+            letter-spacing: 0.02em;
+        }
+
+        .login-subtitle {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            color: var(--text-muted);
+            text-align: center;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            margin-bottom: 32px;
+        }
+
+        /* ── Divider ─────────────────────────────────────────────────── */
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border-dim), transparent);
+            margin-bottom: 28px;
+        }
+
+        /* ── Form Group ──────────────────────────────────────────────── */
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 8px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            pointer-events: none;
+            transition: color 0.2s;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 12px 12px 12px 42px;
+            background: var(--bg-input);
+            color: var(--text-primary);
+            border: 1px solid var(--border-dim);
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: 'Exo 2', sans-serif;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+        }
+
+        .input-field::placeholder { color: #3D444D; }
+
+        .input-field:focus {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 0 3px rgba(0,212,255,0.2);
+        }
+
+        .input-field:focus + .input-icon,
+        .input-wrapper:focus-within .input-icon {
+            color: var(--accent-cyan);
+        }
+
+        /* Password field padding for eye button */
+        .input-field.has-eye { padding-right: 44px; }
+
+        /* ── Eye Toggle ──────────────────────────────────────────────── */
+        .eye-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            padding: 4px;
+            border-radius: 4px;
+            transition: color 0.2s;
+        }
+
+        .eye-toggle:hover { color: var(--accent-cyan); }
+
+        /* ── Login Button ────────────────────────────────────────────── */
+        .btn-login {
+            position: relative;
+            width: 100%;
+            padding: 14px;
+            margin-top: 8px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            color: #fff;
+            font-family: 'Exo 2', sans-serif;
+            font-weight: 700;
+            font-size: 15px;
+            letter-spacing: 0.05em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: filter 0.2s, transform 0.1s, opacity 0.2s;
+            overflow: hidden;
+        }
+
+        .btn-login::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.12), transparent);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .btn-login:hover { filter: brightness(1.1); }
+        .btn-login:hover::before { opacity: 1; }
+        .btn-login:active { transform: scale(0.99); }
+
+        /* Loading state */
+        .btn-login.loading {
+            opacity: 0.8;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .btn-login.loading::after {
+            content: '';
+            position: absolute;
+            right: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.35);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: translateY(-50%) rotate(360deg); }
+        }
+
+        /* ── Error / Locked Messages ─────────────────────────────────── */
+        .msg-box {
+            display: none;
+            padding: 12px 14px;
+            border-radius: 4px;
+            font-size: 13px;
+            margin-top: 14px;
+            line-height: 1.5;
+            animation: slideDown 0.25s ease both;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .msg-box.visible { display: flex; align-items: flex-start; gap: 10px; }
+
+        #errorMsg {
+            background: rgba(255,68,68,0.1);
+            border-left: 4px solid var(--accent-red);
+            color: #FF6B6B;
+        }
+
+        #lockedMsg {
+            background: rgba(255,140,0,0.1);
+            border-left: 4px solid var(--accent-orange);
+            color: #FFB347;
+        }
+
+        .msg-icon { flex-shrink: 0; margin-top: 1px; }
+
+        /* ── Footer Text ─────────────────────────────────────────────── */
+        .login-footer {
+            margin-top: 28px;
+            text-align: center;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            color: #3D444D;
+            letter-spacing: 0.08em;
+        }
+
+        .login-footer span { color: rgba(0,212,255,0.35); }
+
+        /* ── Scrollbar ───────────────────────────────────────────────── */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-primary); }
+        ::-webkit-scrollbar-thumb { background: var(--border-dim); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4D5562; }
+    </style>
+</head>
+<body>
+
+<div class="page-wrapper">
+    <div class="login-card">
+
+        <!-- Shield + Title -->
+        <div class="shield-container">
+            <svg class="shield-icon" viewBox="0 0 72 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <!-- Shield body -->
+                <path d="M36 4L8 16V38C8 54.5 20 68.5 36 74C52 68.5 64 54.5 64 38V16L36 4Z"
+                      fill="rgba(0,212,255,0.08)"
+                      stroke="#00D4FF"
+                      stroke-width="2"
+                      stroke-linejoin="round"/>
+                <!-- Inner shield highlight -->
+                <path d="M36 12L16 22V38C16 51 25 62 36 66.5C47 62 56 51 56 38V22L36 12Z"
+                      fill="rgba(0,212,255,0.05)"
+                      stroke="rgba(0,212,255,0.4)"
+                      stroke-width="1"
+                      stroke-linejoin="round"/>
+                <!-- Check / lock mark -->
+                <path d="M26 38L33 45L47 31"
+                      stroke="#00D4FF"
+                      stroke-width="2.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"/>
+            </svg>
+
+            <h1 class="login-title">CyberShield CSMS</h1>
+            <p class="login-subtitle">Secure Access Portal</p>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Username Field -->
+        <div class="form-group">
+            <label class="form-label" for="username">Username</label>
+            <div class="input-wrapper">
+                <input
+                    class="input-field"
+                    type="text"
+                    id="username"
+                    name="username"
+                    placeholder="Enter your username"
+                    autocomplete="username"
+                    spellcheck="false"
+                    autofocus
+                />
+                <span class="input-icon">
+                    <!-- Person icon -->
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                </span>
+            </div>
+        </div>
+
+        <!-- Password Field -->
+        <div class="form-group">
+            <label class="form-label" for="password">Password</label>
+            <div class="input-wrapper">
+                <input
+                    class="input-field has-eye"
+                    type="password"
+                    id="password"
+                    name="password"
+                    placeholder="Enter your password"
+                    autocomplete="current-password"
+                />
+                <span class="input-icon">
+                    <!-- Lock icon -->
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                </span>
+                <button class="eye-toggle" type="button" id="eyeToggle" aria-label="Toggle password visibility">
+                    <!-- Eye open (shown when password is hidden) -->
+                    <svg id="eyeOpen" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    <!-- Eye closed (shown when password is visible) -->
+                    <svg id="eyeClosed" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                        <line x1="1" y1="1" x2="23" y2="23"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Login Button -->
+        <button class="btn-login" type="button" id="loginBtn">
+            AUTHENTICATE
+        </button>
+
+        <!-- Error Message -->
+        <div class="msg-box" id="errorMsg" role="alert" aria-live="polite">
+            <svg class="msg-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span id="errorText">Invalid credentials. Please try again.</span>
+        </div>
+
+        <!-- Locked Message -->
+        <div class="msg-box" id="lockedMsg" role="alert" aria-live="polite">
+            <svg class="msg-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            <span id="lockedText">Account locked. Please try again later.</span>
+        </div>
+
+        <!-- Footer -->
+        <p class="login-footer">
+            <span>■</span> CYBERSHIELD v2.4 &nbsp;·&nbsp; CLASSIFIED SYSTEM &nbsp;·&nbsp; <span>■</span>
+        </p>
+
+    </div>
+</div>
+
+<script>
+    /* ── Eye Toggle ──────────────────────────────────────────────────── */
+    const eyeToggle  = document.getElementById('eyeToggle');
+    const passwordFld = document.getElementById('password');
+    const eyeOpen    = document.getElementById('eyeOpen');
+    const eyeClosed  = document.getElementById('eyeClosed');
+
+    eyeToggle.addEventListener('click', () => {
+        const isHidden = passwordFld.type === 'password';
+        passwordFld.type   = isHidden ? 'text' : 'password';
+        eyeOpen.style.display   = isHidden ? 'none'  : '';
+        eyeClosed.style.display = isHidden ? ''      : 'none';
+        eyeToggle.setAttribute('aria-label', isHidden ? 'Hide password' : 'Toggle password visibility');
+    });
+
+    /* ── Helpers ─────────────────────────────────────────────────────── */
+    function hideMessages() {
+        document.getElementById('errorMsg').classList.remove('visible');
+        document.getElementById('lockedMsg').classList.remove('visible');
+    }
+
+    function showError(text) {
+        const box = document.getElementById('errorMsg');
+        document.getElementById('errorText').textContent = text || 'Invalid credentials. Please try again.';
+        box.classList.remove('visible');          // reset animation
+        void box.offsetWidth;                     // reflow to re-trigger animation
+        box.classList.add('visible');
+    }
+
+    function showLocked(text) {
+        const box = document.getElementById('lockedMsg');
+        document.getElementById('lockedText').textContent = text || 'Account locked. Please try again later.';
+        box.classList.remove('visible');
+        void box.offsetWidth;
+        box.classList.add('visible');
+    }
+
+    /* ── Login Handler ───────────────────────────────────────────────── */
+    const loginBtn = document.getElementById('loginBtn');
+    const originalBtnText = loginBtn.textContent;
+
+    loginBtn.addEventListener('click', async () => {
+        hideMessages();
+
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+
+        // Basic client-side validation
+        if (!username || !password) {
+            showError('Please enter both username and password.');
+            return;
+        }
+
+        // Show loading state
+        loginBtn.classList.add('loading');
+        loginBtn.textContent = 'Authenticating...';
+
+        try {
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            if (response.ok) {
+                // Success — save token and redirect
+                const data = await response.json();
+                localStorage.setItem('csms_token', data.token);
+
+                loginBtn.textContent = 'Access Granted ✓';
+                loginBtn.style.background = 'linear-gradient(135deg, #00FF88, #00AA55)';
+
+                setTimeout(() => {
+                    if (data.role === 'ADMIN') {
+                        window.location.href = '/dashboard';
+                    } else {
+                        window.location.href = '/home';
+                    }
+                }, 600);
+
+                return; // don't remove loading class — we're navigating away
+
+            } else if (response.status === 401) {
+                showError('Invalid credentials. Please check your username and password.');
+
+            } else if (response.status === 423) {
+                let message = 'Account locked. Please try again later.';
+                try {
+                    const errData = await response.json();
+                    if (errData && errData.message) message = errData.message;
+                } catch (_) { /* use default */ }
+                showLocked(message);
+
+            } else {
+                showError('An unexpected error occurred. Please try again.');
+            }
+
+        } catch (networkError) {
+            showError('Unable to reach the server. Check your connection.');
+        }
+
+        // Always restore button after non-success
+        loginBtn.classList.remove('loading');
+        loginBtn.textContent = originalBtnText;
+    });
+
+    /* ── Enter key submits ───────────────────────────────────────────── */
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') loginBtn.click();
+    });
+
+    /* ── Hide messages when user starts typing ───────────────────────── */
+    ['username', 'password'].forEach(id => {
+        document.getElementById(id).addEventListener('input', hideMessages);
+    });
+</script>
+
+</body>
+</html>

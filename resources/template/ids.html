@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CyberShield CSMS — IDS Alerts</title>
+  <link rel="stylesheet" href="main.css">
+  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Exo+2:wght@300;400;600;800&display=swap" rel="stylesheet"/>
+  <style>
+    /* ══════════════════════════════════════════
+       CSS CUSTOM PROPERTIES
+    ══════════════════════════════════════════ */
+    :root {
+      --bg-deep:        #050b12;
+      --bg-panel:       #080f1a;
+      --bg-card:        #0b1422;
+      --bg-card-hover:  #0e1a2d;
+      --border:         #112236;
+      --border-bright:  #1a3354;
+      --cyan:           #00e5ff;
+      --cyan-dim:       #0097b2;
+      --cyan-glow:      rgba(0,229,255,0.18);
+      --green:          #00ff9d;
+      --green-dim:      #00c77a;
+      --red:            #ff1744;
+      --red-dim:        #b71c1c;
+      --red-glow:       rgba(255,23,68,0.22);
+      --orange:         #ff8c00;
+      --yellow:         #ffc107;
+      --gray-sev:       #9e9e9e;
+      --text-primary:   #d0e8ff;
+      --text-secondary: #5a7fa6;
+      --text-dim:       #2e4a6a;
+      --font-mono:      'Share Tech Mono', monospace;
+      --font-ui:        'Rajdhani', sans-serif;
+      --font-display:   'Exo 2', sans-serif;
+      --sidebar-w:      240px;
+      --navbar-h:       56px;
+      --radius:         6px;
+      --transition:     0.22s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    /* ══════════════════════════════════════════
+       RESET & BASE
+    ══════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: var(--bg-deep); color: var(--text-primary); font-family: var(--font-ui); overflow-x: hidden; }
+    a { color: inherit; text-decoration: none; }
+    button { cursor: pointer; font-family: var(--font-ui); }
+    input, select { font-family: var(--font-mono); }
+
+    /* ══════════════════════════════════════════
+       SCANLINE OVERLAY
+    ══════════════════════════════════════════ */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 9999; pointer-events: none;
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px);
+    }
+
+    /* ══════════════════════════════════════════
+       LAYOUT SHELL
+    ══════════════════════════════════════════ */
+    .shell { display: flex; height: 100vh; }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: var(--sidebar-w); flex-shrink: 0;
+      background: var(--bg-panel);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      position: fixed; top: 0; left: 0; height: 100vh; z-index: 100;
+      overflow: hidden;
+    }
+    .sidebar::after {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none;
+      background: linear-gradient(180deg, rgba(0,229,255,0.03) 0%, transparent 40%);
+    }
+    .sidebar-logo {
+      height: var(--navbar-h); display: flex; align-items: center; gap: 10px;
+      padding: 0 18px; border-bottom: 1px solid var(--border);
+      font-family: var(--font-display); font-weight: 800; font-size: 15px;
+      letter-spacing: 0.08em; color: var(--cyan);
+      text-shadow: 0 0 12px var(--cyan);
+    }
+    .sidebar-logo .shield-icon { width: 28px; height: 28px; flex-shrink: 0; }
+    .sidebar-logo span.cs { color: var(--text-primary); }
+    .sidebar-logo span.ms { color: var(--cyan); }
+    .sidebar-nav { flex: 1; padding: 12px 0; overflow-y: auto; }
+    .nav-section { padding: 14px 16px 4px; font-size: 9px; letter-spacing: 0.18em; color: var(--text-dim); font-family: var(--font-mono); text-transform: uppercase; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 18px; font-size: 13px; font-weight: 600;
+      letter-spacing: 0.04em; color: var(--text-secondary);
+      transition: all var(--transition); position: relative; cursor: pointer;
+    }
+    .nav-item:hover { color: var(--text-primary); background: rgba(0,229,255,0.05); }
+    .nav-item.active {
+      color: var(--cyan); background: rgba(0,229,255,0.08);
+      border-right: 2px solid var(--cyan);
+    }
+    .nav-item.active::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px;
+      background: var(--cyan); box-shadow: 0 0 8px var(--cyan);
+    }
+    .nav-item .nav-icon { width: 16px; text-align: center; font-size: 14px; }
+    .nav-badge {
+      margin-left: auto; background: var(--red); color: #fff;
+      font-size: 10px; font-family: var(--font-mono); padding: 1px 6px;
+      border-radius: 20px; min-width: 18px; text-align: center;
+    }
+    .sidebar-footer { padding: 14px 18px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-dim); font-family: var(--font-mono); }
+    .status-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); margin-right: 6px; animation: pulse-green 2s infinite; }
+
+    /* ── NAVBAR ── */
+    .navbar {
+      position: fixed; top: 0; left: var(--sidebar-w); right: 0; height: var(--navbar-h);
+      background: var(--bg-panel); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; z-index: 90;
+    }
+    .navbar-left { display: flex; align-items: center; gap: 12px; }
+    .navbar-breadcrumb { font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary); }
+    .navbar-breadcrumb span { color: var(--cyan); }
+    .navbar-right { display: flex; align-items: center; gap: 16px; }
+    .navbar-clock { font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary); }
+    .navbar-avatar { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, var(--cyan-dim), var(--cyan)); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--bg-deep); }
+    .navbar-alert-count { font-family: var(--font-mono); font-size: 11px; color: var(--red); animation: blink-text 1.4s step-start infinite; }
+
+    /* ── MAIN CONTENT ── */
+    .main {
+      margin-left: var(--sidebar-w);
+      margin-top: var(--navbar-h);
+      padding: 24px;
+      flex: 1; min-height: calc(100vh - var(--navbar-h));
+      background: var(--bg-deep);
+    }
+
+    /* ══════════════════════════════════════════
+       PAGE HEADER
+    ══════════════════════════════════════════ */
+    .page-header { margin-bottom: 24px; display: flex; align-items: flex-end; justify-content: space-between; }
+    .page-title { font-family: var(--font-display); font-weight: 800; font-size: 26px; letter-spacing: 0.06em; color: var(--text-primary); }
+    .page-title span { color: var(--cyan); text-shadow: 0 0 16px var(--cyan-dim); }
+    .page-subtitle { font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+    .page-header-right { display: flex; align-items: center; gap: 10px; }
+    .live-indicator { display: flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 11px; color: var(--green); }
+    .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse-green 1.2s infinite; }
+
+    /* ══════════════════════════════════════════
+       CARDS
+    ══════════════════════════════════════════ */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      position: relative; overflow: hidden;
+    }
+    .card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(0,229,255,0.3), transparent);
+    }
+    .card-header {
+      padding: 14px 18px 10px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .card-title { font-family: var(--font-display); font-weight: 700; font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--cyan); }
+    .card-body { padding: 18px; }
+
+    /* ══════════════════════════════════════════
+       TOP ROW: THREAT METER + STATS
+    ══════════════════════════════════════════ */
+    .top-row { display: grid; grid-template-columns: 280px 1fr; gap: 18px; margin-bottom: 18px; }
+
+    /* ── THREAT METER ── */
+    .threat-meter-card .card-body { display: flex; flex-direction: column; align-items: center; padding: 24px 18px; }
+    .gauge-wrap { position: relative; width: 180px; height: 180px; }
+    .gauge-wrap svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+    .gauge-bg { fill: none; stroke: #0d1f35; stroke-width: 12; }
+    .gauge-fg {
+      fill: none; stroke-width: 12;
+      stroke-linecap: round;
+      stroke-dasharray: 502;
+      stroke-dashoffset: 502;
+      transition: stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1), stroke 0.6s ease;
+      filter: drop-shadow(0 0 6px currentColor);
+    }
+    .gauge-center {
+      position: absolute; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; pointer-events: none;
+    }
+    .gauge-percent { font-family: var(--font-display); font-weight: 800; font-size: 38px; color: var(--text-primary); line-height: 1; }
+    .gauge-label { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.14em; color: var(--text-secondary); margin-top: 4px; text-transform: uppercase; }
+    .threat-level-label { margin-top: 14px; font-family: var(--font-display); font-weight: 700; font-size: 18px; letter-spacing: 0.1em; }
+    .threat-bars { width: 100%; margin-top: 14px; display: flex; gap: 3px; }
+    .threat-bar { flex: 1; height: 4px; border-radius: 2px; background: var(--border); }
+    .threat-bar.active { animation: bar-glow 1s ease-out; }
+
+    /* ── STATS GRID ── */
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr 1fr; gap: 12px; }
+    .stat-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 14px 16px;
+      display: flex; flex-direction: column; gap: 6px; position: relative; overflow: hidden;
+    }
+    .stat-card::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; }
+    .stat-card.c-cyan::after { background: linear-gradient(90deg, transparent, var(--cyan), transparent); }
+    .stat-card.c-red::after { background: linear-gradient(90deg, transparent, var(--red), transparent); }
+    .stat-card.c-orange::after { background: linear-gradient(90deg, transparent, var(--orange), transparent); }
+    .stat-card.c-yellow::after { background: linear-gradient(90deg, transparent, var(--yellow), transparent); }
+    .stat-card.c-green::after { background: linear-gradient(90deg, transparent, var(--green), transparent); }
+    .stat-card.c-gray::after { background: linear-gradient(90deg, transparent, var(--gray-sev), transparent); }
+    .stat-label { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-secondary); }
+    .stat-value { font-family: var(--font-display); font-weight: 800; font-size: 28px; line-height: 1; }
+    .stat-value.c-cyan  { color: var(--cyan); text-shadow: 0 0 14px var(--cyan-dim); }
+    .stat-value.c-red   { color: var(--red); text-shadow: 0 0 14px var(--red-dim); }
+    .stat-value.c-orange{ color: var(--orange); }
+    .stat-value.c-yellow{ color: var(--yellow); }
+    .stat-value.c-green { color: var(--green); text-shadow: 0 0 14px var(--green-dim); }
+    .stat-value.c-gray  { color: var(--gray-sev); }
+    .stat-delta { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); }
+    .stat-delta.up { color: var(--red); }
+    .stat-delta.dn { color: var(--green); }
+
+    /* ══════════════════════════════════════════
+       FILTER BAR
+    ══════════════════════════════════════════ */
+    .filter-card { margin-bottom: 18px; }
+    .filter-bar {
+      display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;
+      padding: 14px 18px;
+    }
+    .filter-group { display: flex; flex-direction: column; gap: 4px; }
+    .filter-label { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-secondary); }
+    .filter-select, .filter-input {
+      background: var(--bg-deep); border: 1px solid var(--border-bright);
+      color: var(--text-primary); padding: 7px 10px;
+      border-radius: var(--radius); font-size: 12px; outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+      min-width: 120px;
+    }
+    .filter-select:focus, .filter-input:focus { border-color: var(--cyan); box-shadow: 0 0 0 2px var(--cyan-glow); }
+    .filter-input[type="date"] { min-width: 140px; color-scheme: dark; }
+    .filter-actions { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+    .btn-apply {
+      background: var(--cyan); color: var(--bg-deep);
+      border: none; padding: 8px 20px; border-radius: var(--radius);
+      font-family: var(--font-display); font-weight: 700; font-size: 13px;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      transition: all var(--transition);
+    }
+    .btn-apply:hover { background: #33eeff; box-shadow: 0 0 16px var(--cyan-glow); }
+    .btn-reset { background: none; border: none; color: var(--text-secondary); font-size: 12px; font-family: var(--font-mono); text-decoration: underline; transition: color var(--transition); }
+    .btn-reset:hover { color: var(--cyan); }
+
+    /* ══════════════════════════════════════════
+       SIMULATE + FEED ROW
+    ══════════════════════════════════════════ */
+    .bottom-row { display: grid; grid-template-columns: 280px 1fr; gap: 18px; align-items: start; }
+
+    /* ── SIMULATE PANEL ── */
+    .simulate-card { border-color: var(--red-dim) !important; }
+    .simulate-card::before { background: linear-gradient(90deg, transparent, rgba(255,23,68,0.35), transparent) !important; }
+    .simulate-card .card-title { color: var(--red) !important; }
+    .simulate-body { padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; }
+    .sim-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 3px; }
+    .sim-select, .sim-input {
+      width: 100%; background: var(--bg-deep); border: 1px solid var(--red-dim);
+      color: var(--text-primary); padding: 8px 10px;
+      border-radius: var(--radius); font-size: 12px; outline: none;
+      transition: border-color var(--transition);
+    }
+    .sim-select:focus, .sim-input:focus { border-color: var(--red); box-shadow: 0 0 0 2px rgba(255,23,68,0.15); }
+    .btn-launch {
+      width: 100%; background: var(--red); color: #fff;
+      border: none; padding: 11px; border-radius: var(--radius);
+      font-family: var(--font-display); font-weight: 700; font-size: 14px;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      transition: all var(--transition); position: relative; overflow: hidden;
+    }
+    .btn-launch::before {
+      content: ''; position: absolute; inset: 0;
+      background: repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(255,255,255,0.06) 4px, rgba(255,255,255,0.06) 8px);
+    }
+    .btn-launch:hover { background: #ff3d5a; box-shadow: 0 0 24px rgba(255,23,68,0.5); }
+    .btn-launch:active { transform: scale(0.98); }
+    .sim-warning { font-family: var(--font-mono); font-size: 10px; color: var(--red-dim); text-align: center; line-height: 1.5; padding: 0 4px; }
+    .sim-warning strong { color: var(--red); }
+
+    /* ── ALERT FEED ── */
+    .feed-card .card-body { padding: 0; }
+    .feed-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 10px 18px; border-bottom: 1px solid var(--border); }
+    .feed-count { font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); }
+    .feed-count strong { color: var(--cyan); }
+    .feed-sort { font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); cursor: pointer; }
+    #alertFeed {
+      max-height: 540px; overflow-y: auto;
+      scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+    }
+    #alertFeed::-webkit-scrollbar { width: 4px; }
+    #alertFeed::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 2px; }
+
+    /* ── ALERT ITEM ── */
+    .alert-item {
+      display: flex; align-items: stretch; gap: 0;
+      border-bottom: 1px solid var(--border);
+      transition: background var(--transition);
+      animation: slideInDown 0.35s cubic-bezier(0.4,0,0.2,1);
+      position: relative;
+    }
+    .alert-item:hover { background: var(--bg-card-hover); }
+    .alert-item.resolved { opacity: 0.42; filter: grayscale(0.6); }
+    .alert-item.resolved .alert-middle { text-decoration: line-through; text-decoration-color: var(--text-dim); }
+    .alert-severity {
+      width: 6px; flex-shrink: 0;
+      border-radius: 0;
+    }
+    .alert-badge-col { width: 80px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; padding: 14px 10px; }
+    .alert-badge {
+      padding: 4px 8px; border-radius: 3px; font-family: var(--font-mono);
+      font-size: 9px; letter-spacing: 0.1em; font-weight: 700; text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .badge-LOW      { background: rgba(158,158,158,0.15); color: var(--gray-sev); border: 1px solid rgba(158,158,158,0.3); }
+    .badge-MEDIUM   { background: rgba(255,193,7,0.12); color: var(--yellow); border: 1px solid rgba(255,193,7,0.3); }
+    .badge-HIGH     { background: rgba(255,140,0,0.12); color: var(--orange); border: 1px solid rgba(255,140,0,0.3); }
+    .badge-CRITICAL { background: rgba(255,68,68,0.15); color: #ff4444; border: 1px solid rgba(255,68,68,0.4); animation: blink-badge 1s step-start infinite; }
+    .sev-LOW      { background: var(--gray-sev); }
+    .sev-MEDIUM   { background: var(--yellow); }
+    .sev-HIGH     { background: var(--orange); }
+    .sev-CRITICAL { background: #ff4444; box-shadow: 0 0 8px rgba(255,68,68,0.7); animation: blink-sev 1s step-start infinite; }
+    .alert-middle { flex: 1; padding: 12px 14px; min-width: 0; }
+    .alert-type { font-family: var(--font-display); font-weight: 700; font-size: 13px; color: var(--text-primary); letter-spacing: 0.04em; margin-bottom: 3px; }
+    .alert-desc { font-family: var(--font-ui); font-size: 12px; color: var(--text-secondary); line-height: 1.45; margin-bottom: 6px; }
+    .alert-meta { display: flex; align-items: center; gap: 14px; font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); }
+    .alert-ip { color: var(--cyan-dim); }
+    .alert-ip::before { content: '⌨ '; }
+    .alert-right { width: 130px; flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; justify-content: center; gap: 8px; padding: 12px 16px; }
+    .alert-time { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); }
+    .btn-resolve {
+      background: none; border: 1px solid var(--green-dim); color: var(--green);
+      padding: 5px 10px; border-radius: var(--radius);
+      font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em;
+      transition: all var(--transition);
+    }
+    .btn-resolve:hover { background: rgba(0,255,157,0.1); box-shadow: 0 0 8px rgba(0,255,157,0.2); }
+    .resolved-check { font-size: 18px; color: var(--green-dim); }
+    .no-alerts { padding: 48px; text-align: center; font-family: var(--font-mono); font-size: 13px; color: var(--text-dim); }
+
+    /* ══════════════════════════════════════════
+       ANIMATIONS
+    ══════════════════════════════════════════ */
+    @keyframes slideInDown {
+      from { opacity: 0; transform: translateY(-16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes blink-badge {
+      0%, 49% { opacity: 1; }
+      50%, 100% { opacity: 0.3; }
+    }
+    @keyframes blink-sev {
+      0%, 49% { opacity: 1; box-shadow: 0 0 8px rgba(255,68,68,0.7); }
+      50%, 100% { opacity: 0.5; box-shadow: none; }
+    }
+    @keyframes blink-text {
+      0%, 49% { opacity: 1; }
+      50%, 100% { opacity: 0.2; }
+    }
+    @keyframes pulse-green {
+      0%, 100% { box-shadow: 0 0 4px var(--green); }
+      50%       { box-shadow: 0 0 12px var(--green); }
+    }
+    @keyframes bar-glow {
+      from { opacity: 0.3; }
+      to   { opacity: 1; }
+    }
+
+    /* ══════════════════════════════════════════
+       RESPONSIVE TWEAKS
+    ══════════════════════════════════════════ */
+    @media (max-width: 1100px) {
+      .top-row, .bottom-row { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: repeat(3, 1fr); grid-template-rows: auto; }
+    }
+  </style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- ══════════ SIDEBAR ══════════ -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <svg class="shield-icon" viewBox="0 0 28 28" fill="none">
+        <path d="M14 2L4 6v8c0 6.2 4.3 12 10 13.8C20.7 26 25 20.2 25 14V6L14 2z" fill="rgba(0,229,255,0.12)" stroke="var(--cyan)" stroke-width="1.5"/>
+        <path d="M9 14l3.5 3.5L19 10" stroke="var(--cyan)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div><span class="cs">CYBER</span><span class="ms">SHIELD</span></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">Core</div>
+      <div class="nav-item">
+        <span class="nav-icon">⬡</span> Dashboard
+      </div>
+      <div class="nav-item active">
+        <span class="nav-icon">◈</span> IDS Alerts
+        <span class="nav-badge" id="sidebarBadge">0</span>
+      </div>
+      <div class="nav-item">
+        <span class="nav-icon" >◉</span> Firewall
+      </div>
+      <div class="nav-item">
+        <span class="nav-icon">⬢</span> Network Map
+      </div>
+      <div class="nav-section">Analysis</div>
+      <div class="nav-item">
+        <span class="nav-icon">▦</span> Threat Intel
+      </div>
+      <div class="nav-item">
+        <span class="nav-icon">▣</span> Log Viewer
+      </div>
+      <div class="nav-item">
+        <span class="nav-icon">◪</span> Reports
+      </div>
+      <div class="nav-section">System</div>
+      <div class="nav-item">
+        <span class="nav-icon">◬</span> Settings
+      </div>
+      <div class="nav-item">
+        <span class="nav-icon">◭</span> Users
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <span class="status-dot"></span>SYSTEM NOMINAL
+    </div>
+  </aside>
+
+  <!-- ══════════ NAVBAR ══════════ -->
+  <header class="navbar">
+    <div class="navbar-left">
+      <div class="navbar-breadcrumb">CSMS / <span>IDS ALERTS</span></div>
+      <span class="navbar-alert-count" id="navAlertCount">▲ 0 ACTIVE THREATS</span>
+    </div>
+    <div class="navbar-right">
+      <div class="navbar-clock" id="navClock">--:--:--</div>
+      <div class="navbar-avatar">OP</div>
+    </div>
+  </header>
+
+  <!-- ══════════ MAIN ══════════ -->
+  <main class="main">
+
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+      <div>
+        <div class="page-title">INTRUSION <span>DETECTION</span> SYSTEM</div>
+        <div class="page-subtitle">REAL-TIME THREAT MONITORING & ALERT MANAGEMENT</div>
+      </div>
+      <div class="page-header-right">
+        <div class="live-indicator"><span class="live-dot"></span> LIVE MONITORING</div>
+      </div>
+    </div>
+
+    <!-- TOP ROW: THREAT METER + STATS -->
+    <div class="top-row">
+
+      <!-- THREAT METER -->
+      <div class="card threat-meter-card">
+        <div class="card-header">
+          <span class="card-title">◈ Threat Meter</span>
+        </div>
+        <div class="card-body">
+          <div class="gauge-wrap">
+            <svg viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg">
+              <circle class="gauge-bg" cx="90" cy="90" r="80"/>
+              <circle class="gauge-fg" id="gaugeFg" cx="90" cy="90" r="80"/>
+            </svg>
+            <div class="gauge-center">
+              <div class="gauge-percent" id="threatPercent">0%</div>
+              <div class="gauge-label">THREAT LEVEL</div>
+            </div>
+          </div>
+          <div class="threat-level-label" id="threatLevelLabel">NOMINAL</div>
+          <div class="threat-bars" id="threatBars">
+            <div class="threat-bar" data-index="0"></div>
+            <div class="threat-bar" data-index="1"></div>
+            <div class="threat-bar" data-index="2"></div>
+            <div class="threat-bar" data-index="3"></div>
+            <div class="threat-bar" data-index="4"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STATS GRID -->
+      <div class="stats-grid">
+        <div class="stat-card c-cyan">
+          <div class="stat-label">Total Alerts</div>
+          <div class="stat-value c-cyan" id="statTotal">0</div>
+          <div class="stat-delta up" id="statTotalDelta">+0 today</div>
+        </div>
+        <div class="stat-card c-red">
+          <div class="stat-label">Critical</div>
+          <div class="stat-value c-red" id="statCritical">0</div>
+          <div class="stat-delta" id="statCriticalDelta">active threats</div>
+        </div>
+        <div class="stat-card c-orange">
+          <div class="stat-label">High</div>
+          <div class="stat-value c-orange" id="statHigh">0</div>
+          <div class="stat-delta">severity alerts</div>
+        </div>
+        <div class="stat-card c-yellow">
+          <div class="stat-label">Medium</div>
+          <div class="stat-value c-yellow" id="statMedium">0</div>
+          <div class="stat-delta">monitoring</div>
+        </div>
+        <div class="stat-card c-green">
+          <div class="stat-label">Resolved</div>
+          <div class="stat-value c-green" id="statResolved">0</div>
+          <div class="stat-delta dn">cleared</div>
+        </div>
+        <div class="stat-card c-gray">
+          <div class="stat-label">Low</div>
+          <div class="stat-value c-gray" id="statLow">0</div>
+          <div class="stat-delta">low priority</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div class="card filter-card">
+      <div class="card-header">
+        <span class="card-title">▦ Filter Alerts</span>
+      </div>
+      <div class="filter-bar">
+        <div class="filter-group">
+          <label class="filter-label">Severity</label>
+          <select class="filter-select" id="filterSeverity">
+            <option value="ALL">ALL</option>
+            <option value="LOW">LOW</option>
+            <option value="MEDIUM">MEDIUM</option>
+            <option value="HIGH">HIGH</option>
+            <option value="CRITICAL">CRITICAL</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">Type</label>
+          <select class="filter-select" id="filterType">
+            <option value="ALL">ALL</option>
+            <option value="BRUTE_FORCE">BRUTE_FORCE</option>
+            <option value="PORT_SCAN">PORT_SCAN</option>
+            <option value="SQL_INJECTION">SQL_INJECTION</option>
+            <option value="DDOS">DDOS</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">Status</label>
+          <select class="filter-select" id="filterStatus">
+            <option value="ALL">ALL</option>
+            <option value="Active">Active</option>
+            <option value="Resolved">Resolved</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">Date From</label>
+          <input type="date" class="filter-input" id="filterDateFrom"/>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">Date To</label>
+          <input type="date" class="filter-input" id="filterDateTo"/>
+        </div>
+        <div class="filter-actions">
+          <button class="btn-apply" id="btnApplyFilter">Apply Filters</button>
+          <button class="btn-reset" id="btnResetFilter">Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTTOM ROW: SIMULATE + FEED -->
+    <div class="bottom-row">
+
+      <!-- SIMULATE ATTACK -->
+      <div class="card simulate-card">
+        <div class="card-header">
+          <span class="card-title">⚠ Simulate Attack</span>
+        </div>
+        <div class="simulate-body">
+          <div>
+            <div class="sim-label">Attack Type</div>
+            <select class="sim-select" id="simType">
+              <option value="BRUTE_FORCE">BRUTE_FORCE</option>
+              <option value="PORT_SCAN">PORT_SCAN</option>
+              <option value="SQL_INJECTION">SQL_INJECTION</option>
+              <option value="DDOS">DDOS</option>
+            </select>
+          </div>
+          <div>
+            <div class="sim-label">Source IP</div>
+            <input type="text" class="sim-input" id="simIP" placeholder="e.g. 192.168.1.100" value="10.0.0.1"/>
+          </div>
+          <button class="btn-launch" id="btnLaunch">⚡ LAUNCH SIMULATION</button>
+          <div class="sim-warning">
+            <strong>⚠ AUTHORIZED TESTING ONLY</strong><br/>
+            This panel is for controlled security drills. All simulated events are logged and monitored.
+          </div>
+        </div>
+      </div>
+
+      <!-- ALERT FEED -->
+      <div class="card feed-card">
+        <div class="card-header">
+          <span class="card-title">◉ Alert Feed</span>
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-secondary);">AUTO-REFRESH 5s</span>
+        </div>
+        <div class="feed-toolbar">
+          <div class="feed-count">Showing <strong id="feedShowing">0</strong> of <strong id="feedTotal">0</strong> alerts</div>
+          <div class="feed-sort" id="feedSortToggle" title="Toggle sort order">⇅ NEWEST FIRST</div>
+        </div>
+        <div id="alertFeed">
+          <div class="no-alerts">No alerts to display. Launch a simulation or wait for live events.</div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script src="/js/ids.js"></script>
+<script>
+/* ══════════════════════════════════════════════════════════
+   IDS PAGE — INLINE BOOTSTRAP (mirrors /js/ids.js contract)
+   Full logic embedded so the page works standalone.
+══════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+
+  // ── DATA STORE ──────────────────────────────────────────
+  let alerts = [];
+  let idCounter = 1;
+  let sortNewestFirst = true;
+  let activeFilters = { severity: 'ALL', type: 'ALL', status: 'ALL', from: '', to: '' };
+
+  const ATTACK_CONFIGS = {
+    BRUTE_FORCE: {
+      severity: ['MEDIUM', 'HIGH', 'CRITICAL'],
+      descs: [
+        'Multiple failed SSH authentication attempts detected from source.',
+        'Repeated RDP login failures exceeding threshold in 60s window.',
+        'Dictionary attack against admin panel — 847 attempts blocked.',
+      ]
+    },
+    PORT_SCAN:    {
+      severity: ['LOW', 'MEDIUM', 'HIGH'],
+      descs: [
+        'Sequential port sweep across 1024 ports detected.',
+        'SYN scan on ports 1–65535 from external source.',
+        'Stealth XMAS scan identified — firewall rule triggered.',
+      ]
+    },
+    SQL_INJECTION: {
+      severity: ['HIGH', 'CRITICAL'],
+      descs: [
+        "Malicious SQL payload detected in HTTP GET parameter 'id'.",
+        "UNION-based injection attempt on /api/users endpoint.",
+        "Blind SQL injection via time-delay on login form.",
+      ]
+    },
+    DDOS: {
+      severity: ['HIGH', 'CRITICAL'],
+      descs: [
+        'UDP flood targeting port 53 — 98k pps detected.',
+        'HTTP GET flood overwhelming web server capacity.',
+        'Amplification attack via NTP reflection — 40Gbps peak.',
+      ]
+    },
+  };
+
+  function randomIP() {
+    return `${rand(1,254)}.${rand(0,255)}.${rand(0,255)}.${rand(1,254)}`;
+  }
+  function rand(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
+  function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  function createAlert(type, sourceIP) {
+    const cfg = ATTACK_CONFIGS[type];
+    return {
+      id: idCounter++,
+      type,
+      severity: pick(cfg.severity),
+      desc: pick(cfg.descs),
+      sourceIP: sourceIP || randomIP(),
+      timestamp: new Date(),
+      status: 'Active',
+    };
+  }
+
+  // ── CLOCK ────────────────────────────────────────────────
+  function tickClock() {
+    const el = document.getElementById('navClock');
+    if (el) el.textContent = new Date().toTimeString().slice(0, 8);
+  }
+  setInterval(tickClock, 1000); tickClock();
+
+  // ── THREAT METER ─────────────────────────────────────────
+  const SEV_WEIGHT = { LOW: 5, MEDIUM: 20, HIGH: 45, CRITICAL: 100 };
+  const CIRC = 2 * Math.PI * 80; // 502.65
+
+  function computeThreatLevel() {
+    const active = alerts.filter(a => a.status === 'Active');
+    if (!active.length) return 0;
+    const raw = active.reduce((s, a) => s + SEV_WEIGHT[a.severity], 0);
+    return Math.min(100, Math.round(raw / (active.length * 1.5)));
+  }
+
+  function updateThreatMeter() {
+    const pct = computeThreatLevel();
+    const color = pct < 25 ? '#00ff9d' : pct < 50 ? '#ffc107' : pct < 75 ? '#ff8c00' : '#ff4444';
+    const label = pct < 25 ? 'NOMINAL' : pct < 50 ? 'ELEVATED' : pct < 75 ? 'HIGH RISK' : 'CRITICAL';
+    const fg = document.getElementById('gaugeFg');
+    const tp = document.getElementById('threatPercent');
+    const tl = document.getElementById('threatLevelLabel');
+    const offset = CIRC - (pct / 100) * CIRC;
+    if (fg) { fg.style.strokeDashoffset = offset; fg.style.stroke = color; fg.style.color = color; }
+    if (tp) tp.textContent = pct + '%';
+    if (tl) { tl.textContent = label; tl.style.color = color; tl.style.textShadow = `0 0 16px ${color}`; }
+    // bars
+    const bars = document.querySelectorAll('.threat-bar');
+    const lit = Math.ceil(pct / 20);
+    bars.forEach((b, i) => {
+      b.style.background = i < lit ? color : 'var(--border)';
+      b.style.boxShadow = i < lit ? `0 0 6px ${color}` : 'none';
+      if (i < lit) b.classList.add('active'); else b.classList.remove('active');
+    });
+  }
+
+  // ── STATS ────────────────────────────────────────────────
+  function updateStats() {
+    const total     = alerts.length;
+    const critical  = alerts.filter(a => a.severity === 'CRITICAL' && a.status === 'Active').length;
+    const high      = alerts.filter(a => a.severity === 'HIGH').length;
+    const medium    = alerts.filter(a => a.severity === 'MEDIUM').length;
+    const low       = alerts.filter(a => a.severity === 'LOW').length;
+    const resolved  = alerts.filter(a => a.status === 'Resolved').length;
+    const active    = alerts.filter(a => a.status === 'Active').length;
+
+    document.getElementById('statTotal').textContent    = total;
+    document.getElementById('statTotalDelta').textContent = `+${total} today`;
+    document.getElementById('statCritical').textContent = critical;
+    document.getElementById('statHigh').textContent     = high;
+    document.getElementById('statMedium').textContent   = medium;
+    document.getElementById('statLow').textContent      = low;
+    document.getElementById('statResolved').textContent = resolved;
+
+    // navbar + sidebar
+    const navEl = document.getElementById('navAlertCount');
+    if (navEl) navEl.textContent = `▲ ${active} ACTIVE THREATS`;
+    const sbEl = document.getElementById('sidebarBadge');
+    if (sbEl) sbEl.textContent = active;
+  }
+
+  // ── FEED RENDER ───────────────────────────────────────────
+  function fmtTime(d) {
+    return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short' })
+      + ' ' + d.toTimeString().slice(0, 8);
+  }
+
+  function applyFilters(list) {
+    const f = activeFilters;
+    return list.filter(a => {
+      if (f.severity !== 'ALL' && a.severity !== f.severity) return false;
+      if (f.type !== 'ALL' && a.type !== f.type) return false;
+      if (f.status !== 'ALL' && a.status !== f.status) return false;
+      if (f.from) { const d = new Date(f.from); if (a.timestamp < d) return false; }
+      if (f.to)   { const d = new Date(f.to); d.setHours(23,59,59); if (a.timestamp > d) return false; }
+      return true;
+    });
+  }
+
+  function renderFeed() {
+    const feed = document.getElementById('alertFeed');
+    const filtered = applyFilters(alerts);
+    const sorted = [...filtered].sort((a, b) => sortNewestFirst ? b.id - a.id : a.id - b.id);
+
+    document.getElementById('feedShowing').textContent = sorted.length;
+    document.getElementById('feedTotal').textContent   = alerts.length;
+
+    if (!sorted.length) {
+      feed.innerHTML = '<div class="no-alerts">No alerts match current filters.</div>';
+      return;
+    }
+
+    feed.innerHTML = sorted.map(alert => `
+      <div class="alert-item ${alert.status === 'Resolved' ? 'resolved' : ''}" data-id="${alert.id}">
+        <div class="alert-severity sev-${alert.severity}"></div>
+        <div class="alert-badge-col">
+          <span class="alert-badge badge-${alert.severity}">${alert.severity}</span>
+        </div>
+        <div class="alert-middle">
+          <div class="alert-type">${alert.type.replace(/_/g,' ')}</div>
+          <div class="alert-desc">${alert.desc}</div>
+          <div class="alert-meta">
+            <span class="alert-ip">${alert.sourceIP}</span>
+            <span>ID #${String(alert.id).padStart(4,'0')}</span>
+          </div>
+        </div>
+        <div class="alert-right">
+          <div class="alert-time">${fmtTime(alert.timestamp)}</div>
+          ${alert.status === 'Active'
+            ? `<button class="btn-resolve" data-id="${alert.id}">✓ Resolve</button>`
+            : `<div class="resolved-check">✔</div>`
+          }
+        </div>
+      </div>
+    `).join('');
+
+    // bind resolve buttons
+    feed.querySelectorAll('.btn-resolve').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = parseInt(btn.dataset.id);
+        const a = alerts.find(x => x.id === id);
+        if (a) { a.status = 'Resolved'; refresh(); }
+      });
+    });
+  }
+
+  function refresh() {
+    updateThreatMeter();
+    updateStats();
+    renderFeed();
+  }
+
+  // ── SIMULATE ─────────────────────────────────────────────
+  document.getElementById('btnLaunch').addEventListener('click', () => {
+    const type = document.getElementById('simType').value;
+    const ip   = document.getElementById('simIP').value.trim() || randomIP();
+    const a    = createAlert(type, ip);
+    alerts.unshift(a);
+    refresh();
+    // flash the feed
+    const feed = document.getElementById('alertFeed');
+    feed.scrollTop = 0;
+    feed.style.boxShadow = '0 0 20px rgba(255,23,68,0.4)';
+    setTimeout(() => { feed.style.boxShadow = ''; }, 600);
+  });
+
+  // ── FILTERS ───────────────────────────────────────────────
+  document.getElementById('btnApplyFilter').addEventListener('click', () => {
+    activeFilters = {
+      severity: document.getElementById('filterSeverity').value,
+      type:     document.getElementById('filterType').value,
+      status:   document.getElementById('filterStatus').value,
+      from:     document.getElementById('filterDateFrom').value,
+      to:       document.getElementById('filterDateTo').value,
+    };
+    renderFeed();
+  });
+
+  document.getElementById('btnResetFilter').addEventListener('click', () => {
+    document.getElementById('filterSeverity').value = 'ALL';
+    document.getElementById('filterType').value     = 'ALL';
+    document.getElementById('filterStatus').value   = 'ALL';
+    document.getElementById('filterDateFrom').value = '';
+    document.getElementById('filterDateTo').value   = '';
+    activeFilters = { severity: 'ALL', type: 'ALL', status: 'ALL', from: '', to: '' };
+    renderFeed();
+  });
+
+  // ── SORT TOGGLE ───────────────────────────────────────────
+  document.getElementById('feedSortToggle').addEventListener('click', function() {
+    sortNewestFirst = !sortNewestFirst;
+    this.textContent = `⇅ ${sortNewestFirst ? 'NEWEST' : 'OLDEST'} FIRST`;
+    renderFeed();
+  });
+
+  // ── AUTO-FEED SIMULATION ──────────────────────────────────
+  // Generate initial alerts for demo
+  const TYPES = Object.keys(ATTACK_CONFIGS);
+  const DEMO_COUNT = 12;
+  for (let i = 0; i < DEMO_COUNT; i++) {
+    const a = createAlert(pick(TYPES));
+    const offset = rand(0, 7200) * 1000;
+    a.timestamp = new Date(Date.now() - offset);
+    if (Math.random() < 0.3) a.status = 'Resolved';
+    alerts.push(a);
+  }
+  alerts.sort((a, b) => b.timestamp - a.timestamp);
+  refresh();
+
+  // Auto-generate random alerts every 8–20s
+  function scheduleRandom() {
+    const delay = rand(8000, 20000);
+    setTimeout(() => {
+      const a = createAlert(pick(TYPES));
+      alerts.unshift(a);
+      refresh();
+      scheduleRandom();
+    }, delay);
+  }
+  scheduleRandom();
+
+})();
+</script>
+</body>
+</html>

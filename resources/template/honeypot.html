@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Honeypot System — CyberShield CSMS</title>
+  <link rel="stylesheet" href="main.css">
+  <link rel="stylesheet" href="/css/main.css" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #0b0d12;
+      --surface:    #111420;
+      --surface2:   #181c2a;
+      --border:     #1f2438;
+      --accent-red: #e53e3e;
+      --accent-red-dim: rgba(229,62,62,0.12);
+      --accent-green: #38a169;
+      --accent-green-dim: rgba(56,161,105,0.12);
+      --text:       #e2e8f0;
+      --text-muted: #6b7280;
+      --text-dim:   #4a5568;
+      --font-mono:  'JetBrains Mono', monospace;
+      --font-main:  'Syne', sans-serif;
+      --sidebar-w:  240px;
+      --navbar-h:   60px;
+      --radius:     8px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-main);
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      z-index: 100;
+    }
+    .sidebar-logo {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .sidebar-logo .logo-icon {
+      width: 34px; height: 34px;
+      background: var(--accent-red);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+    .sidebar-logo .brand {
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text);
+    }
+    .sidebar-logo .brand span { color: var(--accent-red); }
+
+    .sidebar-nav { padding: 16px 0; flex: 1; }
+    .nav-section-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      padding: 8px 24px 4px;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 24px;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.15s;
+      border-left: 3px solid transparent;
+    }
+    .nav-item:hover { color: var(--text); background: var(--surface2); }
+    .nav-item.active {
+      color: var(--accent-red);
+      background: var(--accent-red-dim);
+      border-left-color: var(--accent-red);
+    }
+    .nav-item .icon { font-size: 15px; width: 18px; text-align: center; }
+
+    .sidebar-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+    }
+
+    /* ── Navbar ── */
+    .navbar {
+      position: fixed;
+      top: 0;
+      left: var(--sidebar-w);
+      right: 0;
+      height: var(--navbar-h);
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      z-index: 90;
+    }
+    .navbar-left {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px; color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+    .navbar-left span { color: var(--text-dim); }
+    .navbar-right {
+      display: flex; align-items: center; gap: 16px;
+    }
+    .navbar-right .badge {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 4px;
+      background: var(--accent-red-dim);
+      color: var(--accent-red);
+      border: 1px solid rgba(229,62,62,0.25);
+    }
+    .navbar-avatar {
+      width: 32px; height: 32px;
+      background: var(--accent-red);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: #fff;
+    }
+
+    /* ── Main ── */
+    .main-wrap {
+      margin-left: var(--sidebar-w);
+      margin-top: var(--navbar-h);
+      flex: 1;
+      padding: 32px 36px;
+      min-height: calc(100vh - var(--navbar-h));
+    }
+
+    /* ── Page Header ── */
+    .page-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 32px;
+      gap: 24px;
+    }
+    /* .page-title-group { */
+
+    /* } */
+    .page-title {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 6px;
+    }
+    .page-title .spider { font-size: 30px; }
+    .page-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+    .page-subtitle code {
+      color: var(--accent-red);
+      background: var(--accent-red-dim);
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    /* ── Toggle ── */
+    .toggle-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      min-width: 300px;
+    }
+    .toggle-info { flex: 1; }
+    .toggle-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 4px;
+    }
+    .toggle-status {
+      font-size: 18px;
+      font-weight: 800;
+      font-family: var(--font-mono);
+      letter-spacing: 0.05em;
+    }
+    .toggle-status.active  { color: var(--accent-green); }
+    .toggle-status.inactive { color: var(--accent-red); }
+
+    /* the switch */
+    .switch { position: relative; display: inline-block; width: 56px; height: 28px; flex-shrink: 0; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; inset: 0;
+      background: var(--border);
+      border-radius: 28px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    .slider::before {
+      content: "";
+      position: absolute;
+      width: 22px; height: 22px;
+      left: 3px; top: 3px;
+      background: #fff;
+      border-radius: 50%;
+      transition: 0.3s;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    }
+    .switch input:checked + .slider { background: var(--accent-green); }
+    .switch input:checked + .slider::before { transform: translateX(28px); }
+
+    /* ── Stats Row ── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 22px;
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-card::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: var(--accent-red);
+      opacity: 0.6;
+    }
+    .stat-card-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 10px;
+    }
+    .stat-card-value {
+      font-size: 36px;
+      font-weight: 800;
+      font-family: var(--font-mono);
+      color: var(--text);
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .stat-card-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+    .stat-card-icon {
+      position: absolute;
+      top: 16px; right: 16px;
+      font-size: 22px;
+      opacity: 0.2;
+    }
+
+    /* ── Table Section ── */
+    .table-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .table-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--border);
+    }
+    .table-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .table-title .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--accent-red);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity:1; transform: scale(1); }
+      50%      { opacity:0.4; transform: scale(0.85); }
+    }
+    .table-actions { display: flex; gap: 8px; }
+    .btn-sm {
+      font-size: 11px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      letter-spacing: 0.05em;
+      padding: 6px 14px;
+      border-radius: 5px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-sm:hover { color: var(--text); border-color: var(--text-dim); }
+    .btn-sm.danger { border-color: rgba(229,62,62,0.3); color: var(--accent-red); background: var(--accent-red-dim); }
+    .btn-sm.danger:hover { background: rgba(229,62,62,0.2); }
+
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      text-align: left;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      font-family: var(--font-mono);
+      background: var(--surface2);
+    }
+    tbody tr {
+      border-left: 3px solid var(--accent-red);
+      transition: background 0.15s;
+    }
+    tbody tr:not(.empty-row):hover { background: rgba(255,255,255,0.02); }
+    tbody tr + tr { border-top: 1px solid var(--border); }
+
+    td {
+      padding: 13px 16px;
+      font-size: 13px;
+      font-family: var(--font-mono);
+      color: var(--text);
+      vertical-align: middle;
+    }
+    td.ip { color: var(--accent-red); font-weight: 600; }
+
+    .badge-danger {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--accent-red);
+      background: var(--accent-red-dim);
+      border: 1px solid rgba(229,62,62,0.25);
+      border-radius: 4px;
+      padding: 2px 7px;
+    }
+    .badge-danger::before { content: "⚠"; font-size: 9px; }
+
+    .pw-cell { display: flex; align-items: center; gap: 8px; }
+    .pw-dots { letter-spacing: 2px; font-size: 14px; color: var(--text-muted); }
+    .pw-text { display: none; color: var(--text); }
+    .pw-cell.revealed .pw-dots { display: none; }
+    .pw-cell.revealed .pw-text { display: block; }
+    .eye-btn {
+      background: none; border: none; cursor: pointer;
+      color: var(--text-dim); padding: 2px 4px; border-radius: 4px;
+      transition: color 0.15s;
+      font-size: 13px;
+      line-height: 1;
+    }
+    .eye-btn:hover { color: var(--text); }
+
+    /* Empty state */
+    .empty-row td {
+      text-align: center;
+      padding: 64px 20px;
+      border-left: none;
+    }
+    .empty-row { border-left: none !important; }
+    .empty-state { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+    .empty-spider { font-size: 56px; opacity: 0.25; }
+    .empty-msg {
+      font-size: 14px;
+      color: var(--text-dim);
+      font-family: var(--font-main);
+      max-width: 320px;
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    /* scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════ SIDEBAR ═══════════════════ -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">🛡</div>
+    <div class="brand">Cyber<span>Shield</span></div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Overview</div>
+    <a class="nav-item" href="dashboard.html"><span class="icon">📊</span> Dashboard</a>
+    <a class="nav-item" href="#"><span class="icon">🔔</span> Alerts</a>
+
+    <div class="nav-section-label" style="margin-top:8px;">Modules</div>
+    <a class="nav-item" href="firewall.html"><span class="icon">🔒</span> Firewall</a>
+    <a class="nav-item" href="ids.html"><span class="icon">🔍</span> Intrusion Detection</a>
+    <a class="nav-item active" href="honeypot.html"><span class="icon">🕷</span> Honeypot</a>
+    <a class="nav-item" href="logs.html"><span class="icon">📁</span> Log Analysis</a>
+    <a class="nav-item" href="#"><span class="icon">🌐</span> Network Map</a>
+
+    <div class="nav-section-label" style="margin-top:8px;">System</div>
+    <a class="nav-item" href="#"><span class="icon">⚙️</span> Settings</a>
+    <a class="nav-item" href="#"><span class="icon">👥</span> Users</a>
+    <a class="nav-item" href="reports.html"><span class="icon">📋</span> Reports</a>
+  </nav>
+
+  <div class="sidebar-footer">
+    CSMS v2.4.1<br/>
+    <span style="color:var(--accent-green)">●</span> All systems nominal
+  </div>
+</aside>
+
+<!-- ═══════════════════ NAVBAR ═══════════════════ -->
+<nav class="navbar">
+  <div class="navbar-left">
+    <span>CSMS</span> / <span>Modules</span> / Honeypot System
+  </div>
+  <div class="navbar-right">
+    <span class="badge">THREAT MONITOR</span>
+    <div class="navbar-avatar">A</div>
+  </div>
+</nav>
+
+<!-- ═══════════════════ MAIN ═══════════════════ -->
+<main class="main-wrap">
+
+  <!-- Page Header + Toggle -->
+  <div class="page-header">
+    <div class="page-title-group">
+      <div class="page-title">
+        <span class="spider">🕷</span> Honeypot System
+      </div>
+      <div class="page-subtitle">
+        Fake login page is active at <code>/honeypot/login</code>
+      </div>
+    </div>
+
+    <div class="toggle-card">
+      <div class="toggle-info">
+        <div class="toggle-label">Honeypot Status</div>
+        <div class="toggle-status active" id="statusText">ACTIVE</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="honeypotToggle" checked onchange="onToggle(this)"/>
+        <span class="slider"></span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Stats Row -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-card-icon">🎯</div>
+      <div class="stat-card-label">Total Captures</div>
+      <div class="stat-card-value" id="totalCaptures">0</div>
+      <div class="stat-card-sub">all-time credential harvests</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-icon">📅</div>
+      <div class="stat-card-label">Today</div>
+      <div class="stat-card-value" id="todayCaptures">0</div>
+      <div class="stat-card-sub">captures in last 24h</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-icon">🌐</div>
+      <div class="stat-card-label">Unique IPs</div>
+      <div class="stat-card-value" id="uniqueIPs">0</div>
+      <div class="stat-card-sub">distinct attacker addresses</div>
+    </div>
+  </div>
+
+  <!-- Captures Table -->
+  <div class="table-section">
+    <div class="table-header">
+      <div class="table-title">
+        <div class="dot"></div>
+        Credential Captures
+      </div>
+      <div class="table-actions">
+        <button class="btn-sm" onclick="loadDemo()">Load Demo Data</button>
+        <button class="btn-sm danger" onclick="clearCaptures()">Clear All</button>
+      </div>
+    </div>
+
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Timestamp</th>
+            <th>Attacker IP</th>
+            <th>Attempted Username</th>
+            <th>Attempted Password</th>
+            <th>Browser / Device</th>
+            <th>Duration</th>
+          </tr>
+        </thead>
+        <tbody id="capturesTableBody">
+          <!-- populated by JS -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<script>
+  /* ── State ── */
+  const DEMO = [
+    { ts:"2025-05-08 02:14:33", ip:"185.220.101.47", user:"admin",        pw:"admin123",       ua:"Chrome 124 / Windows",   dur:"4s" },
+    { ts:"2025-05-08 02:18:11", ip:"45.33.32.156",   user:"root",         pw:"toor",           ua:"curl/7.88.1 / Linux",    dur:"1s" },
+    { ts:"2025-05-08 03:05:59", ip:"198.51.100.23",  user:"administrator",pw:"P@ssw0rd!",      ua:"Firefox 125 / macOS",    dur:"7s" },
+    { ts:"2025-05-08 03:44:02", ip:"192.0.2.88",     user:"admin",        pw:"123456",         ua:"Python-urllib/3.11",     dur:"2s" },
+    { ts:"2025-05-08 04:22:17", ip:"203.0.113.55",   user:"sa",           pw:"sa",             ua:"Masscan/1.3 / Linux",    dur:"1s" },
+    { ts:"2025-05-08 05:01:48", ip:"185.220.101.90", user:"postgres",     pw:"postgres",       ua:"Chrome 123 / Android",   dur:"9s" },
+    { ts:"2025-05-08 06:33:05", ip:"104.21.96.240",  user:"guest",        pw:"guest",          ua:"Safari 17 / iOS",        dur:"3s" },
+  ];
+
+  let captures = [];
+
+  /* ── Toggle ── */
+  function onToggle(cb) {
+    const el = document.getElementById("statusText");
+    if (cb.checked) {
+      el.textContent = "ACTIVE";
+      el.className = "toggle-status active";
+    } else {
+      el.textContent = "INACTIVE";
+      el.className = "toggle-status inactive";
+    }
+  }
+
+  /* ── Render ── */
+  function render() {
+    const tbody = document.getElementById("capturesTableBody");
+    document.getElementById("totalCaptures").textContent = captures.length;
+    document.getElementById("todayCaptures").textContent = captures.filter(c => c.ts.startsWith("2025-05-08")).length;
+    const ips = new Set(captures.map(c => c.ip));
+    document.getElementById("uniqueIPs").textContent = ips.size;
+
+    if (!captures.length) {
+      tbody.innerHTML = `
+        <tr class="empty-row">
+          <td colspan="7">
+            <div class="empty-state">
+              <div class="empty-spider">🕷</div>
+              <div class="empty-msg">No captures yet. Honeypot is waiting for attackers...</div>
+            </div>
+          </td>
+        </tr>`;
+      return;
+    }
+
+    tbody.innerHTML = captures.map((c, i) => `
+      <tr>
+        <td>
+          <span class="badge-danger">DANGER</span>
+          &nbsp; ${i + 1}
+        </td>
+        <td>${c.ts}</td>
+        <td class="ip">${c.ip}</td>
+        <td>${c.user}</td>
+        <td>
+          <div class="pw-cell" id="pw-${i}">
+            <span class="pw-dots">••••••••</span>
+            <span class="pw-text">${escHtml(c.pw)}</span>
+            <button class="eye-btn" onclick="togglePw(${i})" title="Reveal password">👁</button>
+          </div>
+        </td>
+        <td>${c.ua}</td>
+        <td>${c.dur}</td>
+      </tr>`).join("");
+  }
+
+  function togglePw(i) {
+    document.getElementById("pw-" + i).classList.toggle("revealed");
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+
+  function loadDemo() {
+    captures = [...DEMO];
+    render();
+  }
+
+  function clearCaptures() {
+    captures = [];
+    render();
+  }
+
+  /* ── Init ── */
+  render();
+</script>
+</body>
+</html>

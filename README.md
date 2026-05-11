@@ -24,13 +24,13 @@ CyberShield CSMS is a university capstone project built to simulate a modern cyb
 
 ## Prerequisites
 
-1. JDK 17 — https://adoptium.net
+1. JDK 17 â€” https://adoptium.net
    - Verify: `java -version`
-2. Apache Maven 3.9+ — https://maven.apache.org
+2. Apache Maven 3.9+ â€” https://maven.apache.org
    - Verify: `mvn -version`
-3. MySQL 8.0 — https://dev.mysql.com/downloads/installer/
+3. MySQL 8.0 â€” https://dev.mysql.com/downloads/installer/
    - Verify: `mysql --version`
-4. IntelliJ IDEA Community — https://www.jetbrains.com/idea/download/
+4. IntelliJ IDEA Community â€” https://www.jetbrains.com/idea/download/
 
 ## Setup Steps
 
@@ -62,12 +62,12 @@ CyberShield CSMS is a university capstone project built to simulate a modern cyb
 
 ## Project Structure
 
-- `src/main/java/` — Java backend source files.
-- `src/main/resources/` — application properties, SQL scripts, templates.
-- `src/main/resources/templates/` — Thymeleaf HTML pages.
-- `src/main/resources/static/` — frontend assets, CSS, JavaScript.
-- `pom.xml` — Maven build configuration.
-- `README.md` — project documentation.
+- `src/main/java/` â€” Java backend source files.
+- `src/main/resources/` â€” application properties, SQL scripts, templates.
+- `src/main/resources/templates/` â€” Thymeleaf HTML pages.
+- `src/main/resources/static/` â€” frontend assets, CSS, JavaScript.
+- `pom.xml` â€” Maven build configuration.
+- `README.md` â€” project documentation.
 
 ## OOP Design Patterns
 
@@ -94,7 +94,7 @@ CyberShield CSMS is a university capstone project built to simulate a modern cyb
 
 | Person | Role | Files Owned |
 |---|---|---|
-| Person A | Backend Lead | Java backend, security, patterns (30 files) |
-| Person B | Database Manager | `schema.sql`, repositories (5 files) |
-| Person C | Frontend Developer | HTML templates, CSS (10 files) |
-| Person D | JS Developer | JavaScript files, README (6 files) |
+| Zeeshan Akhtar | Backend Lead | Java backend, security, patterns (30 files) |
+| Zayan Khan | Database Manager | `schema.sql`, repositories (5 files) |
+| Agha Ahmed | Frontend Developer | HTML templates, CSS (10 files) |
+| Aftab Yaseen| JS Developer | JavaScript files, README (6 files) |
